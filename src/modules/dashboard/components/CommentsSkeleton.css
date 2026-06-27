@@ -1,0 +1,15 @@
+@keyframes skeleton-loading {
+  0% {
+    background-color: #e5e7eb;
+  }
+  50% {
+    background-color: #f3f4f6;
+  }
+  100% {
+    background-color: #e5e7eb;
+  }
+}
+
+.skeleton-animate {
+  animation: skeleton-loading 2s infinite;
+}
