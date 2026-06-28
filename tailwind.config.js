@@ -8,6 +8,9 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+      },
       colors: {
         blueCustom: '#4960FE',
         purple: '#3f3cbb',
@@ -17,7 +20,7 @@ export default {
         silver: '#ecebff',
         bubblegum: '#ff77e9',
         bermuda: '#78dcca',
-        pageBg: '#F2F4F7',
+        pageBg: '#F0F2F5',
       },
     },
   },

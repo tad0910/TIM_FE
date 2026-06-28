@@ -337,7 +337,7 @@ export default function PostCard({
 
   return (
     <>
-      <div className="bg-white rounded-2xl shadow overflow-visible">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible">
         <div className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

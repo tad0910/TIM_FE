@@ -240,6 +240,7 @@ async function request<TResponse = unknown>(
         localStorage.removeItem(AUTH_TOKEN_KEY);
         localStorage.removeItem(REFRESH_TOKEN_KEY);
         localStorage.removeItem(AUTH_MODE_KEY);
+        window.location.href = "/login?relogin=true";
       }
       throw new ApiError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", 401);
     }
@@ -263,6 +264,9 @@ async function request<TResponse = unknown>(
         }
         if (import.meta.env.DEV) {
           console.error("[api] Failed while waiting for refresh:", waitError);
+        }
+        if (isBrowser) {
+          window.location.href = "/login?relogin=true";
         }
         throw new ApiError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", 401);
       }
@@ -341,6 +345,7 @@ async function request<TResponse = unknown>(
             localStorage.removeItem(AUTH_TOKEN_KEY);
             localStorage.removeItem(REFRESH_TOKEN_KEY);
             localStorage.removeItem(AUTH_MODE_KEY);
+            window.location.href = "/login?relogin=true";
           }
           if (import.meta.env.DEV) {
             console.error("[api] 401 Error details:", await readResponseText());
@@ -353,6 +358,12 @@ async function request<TResponse = unknown>(
         }
         if (import.meta.env.DEV) {
           console.error("[api] Token refresh process failed:", refreshError);
+        }
+        if (isBrowser) {
+          localStorage.removeItem(AUTH_TOKEN_KEY);
+          localStorage.removeItem(REFRESH_TOKEN_KEY);
+          localStorage.removeItem(AUTH_MODE_KEY);
+          window.location.href = "/login?relogin=true";
         }
         throw new ApiError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", 401);
       }

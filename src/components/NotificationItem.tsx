@@ -307,54 +307,54 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
       onClick={handleClick}
     >
       <div className="flex items-start space-x-3">
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 relative mt-1">
           {hasValidAvatar && !avatarError ? (
             <img
               src={getImageUrl(notification.senderAvatar)}
               alt={notification.senderUsername}
-              className="w-8 h-8 rounded-full object-cover"
+              className="w-14 h-14 rounded-full object-cover"
               onError={() => {
                 setAvatarError(true);
               }}
             />
-          ) : notification.iconUrl && notification.iconUrl.trim() !== '' ? (
-            <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-              <img
-                src={notification.iconUrl}
-                alt="Notification icon"
-                className="w-8 h-8 object-cover"
-                onError={() => {
-                }}
-              />
-            </div>
           ) : (
-            getNotificationIcon(notification.notificationType, notification.iconUrl)
+            <div className="w-14 h-14 bg-gray-200 rounded-full flex items-center justify-center">
+              <span className="text-xl font-semibold text-gray-500">
+                {notification.senderUsername ? notification.senderUsername.charAt(0).toUpperCase() : 'U'}
+              </span>
+            </div>
           )}
+          
+          <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full border-2 border-white flex items-center justify-center overflow-hidden [&>div]:w-full [&>div]:h-full [&>div>svg]:w-3.5 [&>div>svg]:h-3.5">
+            {getNotificationIcon(notification.notificationType, notification.iconUrl)}
+          </div>
         </div>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <p className={`text-sm font-medium ${
-                !notification.isRead ? 'text-gray-900' : 'text-gray-800'
+        <div className="flex-1 min-w-0 ml-1">
+          <div className="flex items-center justify-between">
+            <div className="flex-1 pr-2">
+              <p className={`text-[15px] leading-[1.3333] ${
+                !notification.isRead ? 'font-semibold text-gray-900' : 'text-gray-800'
               }`}>
                 {notification.title || displayContent}
               </p>
-              {notification.content && (
-                <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">
+              {notification.content && notification.content !== notification.title && (
+                <p className="text-[15px] leading-[1.3333] text-gray-500 mt-0.5 line-clamp-2">
                   {notification.content}
                 </p>
               )}
-            </div>
-            
-            <div className="flex items-center space-x-2 ml-4">
-              <span className="text-xs text-gray-500">
+              <span className={`text-[13px] font-semibold mt-1 block ${
+                !notification.isRead ? 'text-blue-600' : 'text-gray-500'
+              }`}>
                 {formatNotificationTime(notification.createdAt)}
               </span>
-              {!notification.isRead && (
-                <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
-              )}
             </div>
+            
+            {!notification.isRead && (
+              <div className="flex-shrink-0 flex items-center h-full mr-1">
+                <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+              </div>
+            )}
           </div>
         </div>
       </div>

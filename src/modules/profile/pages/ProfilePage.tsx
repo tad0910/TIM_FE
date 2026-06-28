@@ -88,8 +88,8 @@ export default function ProfilePage() {
     const isOwnProfile = user?.id === id?.toString() || !id;
     
     return (
-      <div className="min-h-screen p-6" style={{ backgroundColor: '#F2F4F7' }}>
-        <div className="max-w-7xl mx-auto space-y-0">
+      <div className="w-full">
+        <div className="w-full space-y-0">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
             <div className="lg:col-span-3"></div>
             <div className="lg:col-span-9 -mb-[14.5rem] lg:-mb-[62]">
@@ -162,8 +162,8 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen p-6" style={{ backgroundColor: '#F2F4F7' }}>
-      <div className="max-w-7xl mx-auto space-y-0">
+    <div className="w-full">
+      <div className="w-full space-y-0">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
           <div className="lg:col-span-3"></div>
           <div className="lg:col-span-9 -mb-[14.5rem] lg:-mb-[62]">

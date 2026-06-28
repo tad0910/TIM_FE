@@ -96,7 +96,7 @@ export default function RankingCard() {
   }, [items, expanded]);
 
   return (
-    <div className="bg-white rounded-2xl shadow p-4">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-50 text-blue-600">
           <FontAwesomeIcon icon={["fas", "trophy"]} />

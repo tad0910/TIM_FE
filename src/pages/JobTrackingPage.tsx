@@ -487,16 +487,7 @@ export default function JobTrackingPage(): JSX.Element {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-2 sm:px-6 lg:px-0">
-      <div>
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 shadow-sm transition hover:bg-gray-50"
-        >
-          <ArrowLeftIcon className="h-4 w-4" />
-          Quay lại
-        </button>
-      </div>
+
       <header className="space-y-4">
         <div className="rounded-2xl border border-gray-200 bg-white px-6 py-6 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">

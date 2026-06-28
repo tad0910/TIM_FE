@@ -81,27 +81,10 @@ const NotificationList: React.FC<NotificationListProps> = ({
     };
   }, [isOpen, loading, refreshNotifications]);
 
-  useEffect(() => {
-    if (isOpen) {
-      refreshNotifications(true);
-    }
-  }, [isOpen, refreshNotifications]);
+  // Notifications are fetched initially by NotificationContext and updated via SSE.
+  // No need to refetch on every open.
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen, onClose]);
+  // Click outside logic is now handled in NotificationBell.tsx
 
 
   if (!isOpen) return null;
@@ -109,7 +92,7 @@ const NotificationList: React.FC<NotificationListProps> = ({
   return (
     <div 
       ref={dropdownRef}
-      className="absolute right-0 top-full mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-hidden"
+      className="absolute right-0 top-full mt-2 w-[360px] bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.2)] border border-gray-100 z-[60] max-h-[90vh] flex flex-col"
     >
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
@@ -161,7 +144,7 @@ const NotificationList: React.FC<NotificationListProps> = ({
         </div>
       </div>
 
-      <div className="overflow-y-auto max-h-80">
+      <div className="overflow-y-auto flex-1 pb-2 scrollbar-thin scrollbar-thumb-gray-300">
         {filteredNotifications.length === 0 && !loading ? (
           <div className="p-4 text-center text-gray-500">
             {activeFilter === 'unread' ? 'Không có thông báo chưa đọc' : 
@@ -169,16 +152,76 @@ const NotificationList: React.FC<NotificationListProps> = ({
              'Không có thông báo nào'}
           </div>
         ) : (
-          filteredNotifications.map((notification) => (
-            <NotificationItem
-              key={notification.id}
-              notification={notification}
-              onMarkAsRead={handleMarkAsReadWithCallback}
-              onClick={(notification) => {
-                console.log('Notification clicked:', notification);
-              }}
-            />
-          ))
+          <>
+            {(() => {
+              const now = new Date();
+              const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+              const yesterday = new Date(today);
+              yesterday.setDate(yesterday.getDate() - 1);
+
+              const newNotifications = filteredNotifications.filter(n => {
+                const date = new Date(n.createdAt);
+                // Within last 2 hours = Mới
+                return now.getTime() - date.getTime() < 2 * 60 * 60 * 1000;
+              });
+
+              const todayNotifications = filteredNotifications.filter(n => {
+                const date = new Date(n.createdAt);
+                return date >= today && now.getTime() - date.getTime() >= 2 * 60 * 60 * 1000;
+              });
+
+              const olderNotifications = filteredNotifications.filter(n => {
+                const date = new Date(n.createdAt);
+                return date < today;
+              });
+
+              return (
+                <div className="py-2">
+                  {newNotifications.length > 0 && (
+                    <div className="mb-2">
+                      <div className="flex justify-between items-center px-4 py-1">
+                        <h4 className="text-base font-semibold text-gray-900">Mới</h4>
+                        <button className="text-sm text-blue-600 hover:bg-gray-100 px-2 py-1 rounded-md transition-colors">Xem tất cả</button>
+                      </div>
+                      {newNotifications.map(notification => (
+                        <NotificationItem
+                          key={notification.id}
+                          notification={notification}
+                          onMarkAsRead={handleMarkAsReadWithCallback}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {todayNotifications.length > 0 && (
+                    <div className="mb-2">
+                      <h4 className="text-base font-semibold text-gray-900 px-4 py-2">Hôm nay</h4>
+                      {todayNotifications.map(notification => (
+                        <NotificationItem
+                          key={notification.id}
+                          notification={notification}
+                          onMarkAsRead={handleMarkAsReadWithCallback}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {olderNotifications.length > 0 && (
+                    <div className="mb-2">
+                      <h4 className="text-base font-semibold text-gray-900 px-4 py-2">Trước đó</h4>
+                      {olderNotifications.map(notification => (
+                        <NotificationItem
+                          key={notification.id}
+                          notification={notification}
+                          onMarkAsRead={handleMarkAsReadWithCallback}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </>
         )}
 
         {loading && (

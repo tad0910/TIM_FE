@@ -290,7 +290,7 @@ export default function NewsList() {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow p-4">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
       {blogAlert && (
         <div className="mb-3 p-3 bg-indigo-50 border border-indigo-100 rounded-xl flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>

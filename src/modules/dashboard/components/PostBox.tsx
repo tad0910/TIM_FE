@@ -292,7 +292,7 @@ export default function PostBox({ onPostCreated, marginTop = '10px' }: PostBoxPr
 
 	return (
 		<>
-			<div className="bg-white rounded-2xl shadow-lg p-4" style={{ marginTop: typeof marginTop === 'string' ? marginTop : `${marginTop}px` }}>
+			<div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4" style={{ marginTop: typeof marginTop === 'string' ? marginTop : `${marginTop}px` }}>
 				<div className="flex gap-3">
 					<UserAvatar 
 						userId={user?.id}

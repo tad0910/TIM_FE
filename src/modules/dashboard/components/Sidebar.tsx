@@ -114,95 +114,28 @@ export default function Sidebar() {
     return "—";
   };
   return (
-    <aside className="space-y-4 sticky top-20 h-[calc(100vh-5rem)] overflow-y-auto overscroll-contain -ml-4 pl-3 pr-3 mr-2 min-w-[240px]">
-      <div className="rounded-2xl shadow-lg p-4 bg-gradient-to-br from-blue-500 to-purple-600">
-        <div className="flex items-center gap-3">
-          <img
-            src={avatarUrl}
-            alt="avatar"
-            className="w-14 h-14 rounded-full object-cover ring-2 ring-white/70"
-          />
-          <div className="text-white">
-            <p className="font-semibold leading-tight">{fullName || ""}</p>
-            <p className="text-xs text-white/80">CodeGym Software</p>
-          </div>
+    <aside className="space-y-2 overflow-y-auto overscroll-contain -ml-4 pl-3 pr-3 mr-2 min-w-[240px] no-scrollbar h-full pb-6">
+      <Link to="/profile" className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-200 transition-colors cursor-pointer">
+        <img
+          src={avatarUrl}
+          alt="avatar"
+          className="w-9 h-9 rounded-full object-cover border border-gray-200"
+        />
+        <div className="text-gray-900">
+          <p className="font-semibold text-[15px] leading-tight">{fullName || ""}</p>
         </div>
-      </div>
+      </Link>
 
-      <div className="bg-white rounded-2xl shadow p-4">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-semibold text-gray-800">Điểm thưởng</p>
-          {isLoadingStats && (
-            <span className="text-xs text-gray-500">Đang tải...</span>
-          )}
-        </div>
-        <div className="space-y-3">
-          <button
-            type="button"
-            onClick={() => navigate("/competency", { state: { pointType: "diligence" } })}
-            className="flex w-full items-center justify-between text-left"
-          >
-            <div className="flex items-center gap-2">
-              <FontAwesomeIcon
-                icon={["fas", "clock"]}
-                className="text-blue-600 w-4 h-4"
-              />
-              <p className="text-sm text-gray-600">Điểm chuyên cần</p>
-            </div>
-            <span className="text-sm font-semibold text-gray-900">
-              {formatPoints(gamificationStats?.totalDiligence)}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate("/competency", { state: { pointType: "competence" } })}
-            className="flex w-full items-center justify-between text-left"
-          >
-            <div className="flex items-center gap-2">
-              <FontAwesomeIcon
-                icon={["fas", "brain"]}
-                className="text-blue-600 w-4 h-4"
-              />
 
-              <p className="text-sm text-gray-600">Điểm năng lực</p>
-            </div>
-            <span className="text-sm font-semibold text-gray-900">
-              {formatPoints(gamificationStats?.totalCompetence)}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate("/competency", { state: { pointType: "experience" } })}
-            className="flex w-full items-center justify-between text-left"
-          >
-            <div className="flex items-center gap-2">
-              <FontAwesomeIcon
-                icon={["fas", "book-open"]}
-                className="text-blue-600 w-4 h-4"
-              />
 
-              <p className="text-sm text-gray-600">Điểm kinh nghiệm</p>
-            </div>
-            <span className="text-sm font-semibold text-gray-900">
-              {formatPoints(gamificationStats?.totalExperience)}
-            </span>
-          </button>
-        </div>
-        {!isLoadingStats && !gamificationStats && (
-          <p className="text-xs text-gray-500 mt-3">
-            Chưa có dữ liệu điểm thưởng.
-          </p>
-        )}
-      </div>
-
-      <nav className="bg-white rounded-2xl shadow divide-y">
-        <ul className="p-2 text-sm">
+      <nav className="bg-transparent">
+        <ul className="space-y-1 text-[15px]">
           {isRegularUser && (
             <>
               <li>
                 <Link
                   to="/my-courses"
-                  className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-200 transition-colors"
                 >
                   <FontAwesomeIcon
                     icon={["fas", "book"]}
@@ -216,7 +149,7 @@ export default function Sidebar() {
               <li>
                 <Link
                   to="/job-tracking"
-                  className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-200 transition-colors"
                 >
                   <FontAwesomeIcon icon={["fas", "briefcase"]} className="text-blue-600 w-4 h-4" />
                   <span className="font-medium text-gray-800">Theo dõi việc làm</span>
@@ -225,7 +158,7 @@ export default function Sidebar() {
               <li>
                 <Link
                   to="/schedule"
-                  className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-200 transition-colors"
                 >
                   <FontAwesomeIcon
                     icon={["fas", "calendar"]}
@@ -237,7 +170,7 @@ export default function Sidebar() {
               <li>
                 <Link
                   to="/scores"
-                  className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-200 transition-colors"
                 >
                   <FontAwesomeIcon
                     icon={["fas", "chart-bar"]}
@@ -249,7 +182,7 @@ export default function Sidebar() {
               <li>
                 <Link
                   to="/scores/rewards"
-                  className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-200 transition-colors"
                 >
                   <FontAwesomeIcon icon={["fas", "trophy"]} className="text-blue-600 w-4 h-4" />
                   <span className="font-medium text-gray-800">Điểm thưởng</span>
@@ -262,7 +195,7 @@ export default function Sidebar() {
               <li>
                 <Link
                   to="/attendance-management"
-                  className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-200 transition-colors"
                 >
                   <FontAwesomeIcon
                     icon={["fas", "user-check"]}
@@ -276,7 +209,7 @@ export default function Sidebar() {
               <li>
                 <Link
                   to="/teacher/forms"
-                  className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-200 transition-colors"
                 >
                   <FontAwesomeIcon
                     icon={["fas", "file-lines"]}
@@ -293,7 +226,7 @@ export default function Sidebar() {
             <li>
               <Link
                 to="/forms"
-                className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-200 transition-colors"
               >
                 <FontAwesomeIcon
                   icon={["fas", "file-lines"]}
@@ -308,7 +241,7 @@ export default function Sidebar() {
           <li>
             <Link
               to="/tuition"
-              className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-200 transition-colors"
             >
               <FontAwesomeIcon
                 icon={["fas", "dollar-sign"]}
@@ -320,7 +253,7 @@ export default function Sidebar() {
           <li>
             <Link
               to="/gamification/guide"
-              className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-200 transition-colors"
             >
               <FontAwesomeIcon
                 icon={["fas", "circle-question"]}
@@ -334,7 +267,7 @@ export default function Sidebar() {
           <li>
             <Link
               to="/financial-policy"
-              className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-200 transition-colors"
             >
               <FontAwesomeIcon
                 icon={["fas", "file-invoice-dollar"]}
@@ -348,7 +281,7 @@ export default function Sidebar() {
           <li>
             <Link
               to="/education-policy"
-              className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-200 transition-colors"
             >
               <FontAwesomeIcon
                 icon={["fas", "graduation-cap"]}
@@ -363,7 +296,7 @@ export default function Sidebar() {
           <li>
             <Link
               to="/privacy-policy"
-              className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-200 transition-colors"
             >
               <FontAwesomeIcon
                 icon={["fas", "shield-halved"]}
@@ -383,11 +316,11 @@ export default function Sidebar() {
                 />
                 <span>Quản Lý Người Dùng</span>
               </div>
-              <ul className="pl-9 space-y-1">
+              <ul className="pl-9 space-y-1 mt-1">
                 <li>
                   <Link
                     to="/admin/users"
-                    className="block px-3 py-2 rounded-md hover:bg-gray-50 transition-colors text-sm text-gray-700"
+                    className="block px-3 py-2 rounded-xl hover:bg-gray-200 transition-colors font-medium text-gray-800"
                   >
                     Người dùng
                   </Link>
@@ -395,7 +328,7 @@ export default function Sidebar() {
                 <li>
                   <Link
                     to="/admin/roles"
-                    className="block px-3 py-2 rounded-md hover:bg-gray-50 transition-colors text-sm text-gray-700"
+                    className="block px-3 py-2 rounded-xl hover:bg-gray-200 transition-colors font-medium text-gray-800"
                   >
                     Vai trò
                   </Link>
@@ -403,7 +336,7 @@ export default function Sidebar() {
                 <li>
                   <Link
                     to="/admin/permissions"
-                    className="block px-3 py-2 rounded-md hover:bg-gray-50 transition-colors text-sm text-gray-700"
+                    className="block px-3 py-2 rounded-xl hover:bg-gray-200 transition-colors font-medium text-gray-800"
                   >
                     Quyền hạn
                   </Link>
