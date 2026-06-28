@@ -24,3 +24,6 @@ dist-ssr
 *.sln
 *.sw?
 coverage/
+
+# AI Context Files
+GEMINI_CONTEXT.md
