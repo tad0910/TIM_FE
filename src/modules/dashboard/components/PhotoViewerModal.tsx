@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { getPostById } from '../../../services/postApi';
 import { useAuthStore } from '../../../store/useAuthStore';
 import type { Post } from '../../../types/post';
@@ -12,17 +12,19 @@ import CommentsModal from './CommentsModal';
 import { useQueryClient } from '@tanstack/react-query';
 import { createPortal } from 'react-dom';
 
-interface PostDetailModalProps {
+interface PhotoViewerModalProps {
   post: Post;
   isOpen: boolean;
   onClose: () => void;
+  initialMediaIndex?: number;
 }
 
-export default function PostDetailModal({ 
+export default function PhotoViewerModal({ 
   post, 
   isOpen, 
-  onClose
-}: PostDetailModalProps) {
+  onClose,
+  initialMediaIndex = 0
+}: PhotoViewerModalProps) {
   const { user } = useAuthStore();
   const [detailedPost, setDetailedPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(false);
@@ -30,7 +32,7 @@ export default function PostDetailModal({
   const [showReactionBar, setShowReactionBar] = useState(false);
   const showReactionBarTimeoutRef = useRef<number | null>(null);
   const hideReactionBarTimeoutRef = useRef<number | null>(null);
-  const [showComments, setShowComments] = useState(false);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(initialMediaIndex);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -58,14 +60,7 @@ export default function PostDetailModal({
     try {
       setLoading(true);
       setError(null);
-      console.log('PostDetailModal: Loading post with ID:', post.id, 'for user:', user!.id);
       const postData = await getPostById(post.id);
-      console.log('PostDetailModal: Loaded post data:', postData);
-      console.log('PostDetailModal: Author data:', {
-        author: postData.author,
-        avatar: postData.author?.avatar,
-        name: postData.author?.name
-      });
       setDetailedPost(postData);
     } catch (err) {
       console.error('Error loading detailed post:', err);
@@ -73,34 +68,29 @@ export default function PostDetailModal({
     } finally {
       setLoading(false);
     }
-  }, [post.id, user]);
+  }, [post.id]);
 
   useEffect(() => {
     if (isOpen && user?.id) {
       loadDetailedPost();
+      setCurrentMediaIndex(initialMediaIndex);
     }
-  }, [isOpen, user?.id, loadDetailedPost]);
+  }, [isOpen, user?.id, loadDetailedPost, initialMediaIndex]);
 
   const handleReactionSelect = async (emotion: EmotionType) => {
     if (!user?.id || !detailedPost) return;
 
     try {
-      // Check if user already reacted by getting all reactions and finding user's reaction
       const reactions = await reactionsApi.getReactionsByPostId(detailedPost.id);
       const userReaction = reactions.find(r => r.userId === user.id);
       
       if (userReaction && userReaction.emotionType === emotion) {
-        // Remove reaction
         await reactionsApi.deletePostReaction(detailedPost.id, { userId: user.id });
       } else {
-        // Add or update reaction
         await reactionsApi.createOrUpdatePostReaction(detailedPost.id, { userId: user.id, emotionType: emotion });
       }
       
-      // Reload post data to get updated reaction counts
       await loadDetailedPost();
-      
-      // Sync with main feed
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       window.dispatchEvent(
         new CustomEvent("reaction-updated", {
@@ -126,7 +116,7 @@ export default function PostDetailModal({
       case 'open': return 'Công khai';
       case 'friends': return 'Bạn bè';
       case 'only_me': return 'Chỉ mình tôi';
-      default: return 'Không xác định';
+      default: return 'Công khai';
     }
   };
 
@@ -147,132 +137,97 @@ export default function PostDetailModal({
     }
   };
 
-  const getFileIcon = (fileType: string) => {
-    switch (fileType) {
-      case 'IMAGE': return '🖼️';
-      case 'VIDEO': return '🎥';
-      case 'DOCUMENT': return '📄';
-      default: return '📎';
-    }
-  };
-
-  const getFileTypeLabel = (fileType: string) => {
-    switch (fileType) {
-      case 'IMAGE': return 'Hình ảnh';
-      case 'VIDEO': return 'Video';
-      case 'DOCUMENT': return 'Tài liệu';
-      default: return 'File';
-    }
-  };
-
-  const hasMediaFiles = () => {
-    if (!detailedPost) return false;
-    
-    // Check for legacy image/video fields
-    const hasLegacyMedia = detailedPost.image || detailedPost.images?.length || 
-                          detailedPost.video || detailedPost.videos?.length;
-    
-    return hasLegacyMedia;
-  };
-
   const getMediaFiles = () => {
     if (!detailedPost) return [];
-    
-    // Include legacy image/video fields
     const legacyImages = detailedPost.images || (detailedPost.image ? [detailedPost.image] : []);
     const legacyVideos = detailedPost.videos || (detailedPost.video ? [detailedPost.video] : []);
     
-    // Convert legacy fields to file-like objects
-    const legacyMediaFiles = [
-      ...legacyImages.map((url, index) => ({
-        id: `legacy-image-${index}`,
-        fileUrl: url,
-        fileType: 'IMAGE'
-      })),
-      ...legacyVideos.map((url, index) => ({
-        id: `legacy-video-${index}`,
-        fileUrl: url,
-        fileType: 'VIDEO'
-      }))
+    return [
+      ...legacyImages.map((url, index) => ({ id: `img-${index}`, fileUrl: url, fileType: 'IMAGE' })),
+      ...legacyVideos.map((url, index) => ({ id: `vid-${index}`, fileUrl: url, fileType: 'VIDEO' }))
     ];
-    
-    return legacyMediaFiles;
   };
 
-  const getDocumentFiles = () => {
-    return detailedPost?.documents || [];
-  };
+  const mediaFiles = getMediaFiles();
+  const currentMedia = mediaFiles[currentMediaIndex];
 
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[9999]">
-      <div className="bg-white rounded-lg w-full max-w-4xl max-h-[95vh] flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b relative">
-          <h2 className="text-xl font-bold w-full text-center">Bài viết của {detailedPost?.author?.name || 'Người dùng'}</h2>
-          <button
-            onClick={onClose}
-            className="absolute right-4 w-9 h-9 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center text-gray-600 transition-colors"
-          >
-            ×
-          </button>
-        </div>
+    <div className="fixed inset-0 bg-black z-[9999] flex flex-col md:flex-row overflow-hidden">
+      {/* Left Side: Media Viewer */}
+      <div className="flex-1 relative flex items-center justify-center bg-black min-h-[50vh] md:min-h-screen">
+        {/* Close Button Top Left */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 left-4 w-10 h-10 bg-black bg-opacity-50 hover:bg-opacity-80 rounded-full flex items-center justify-center text-white transition-colors z-10"
+        >
+          <FontAwesomeIcon icon={["fas", "xmark"]} className="text-xl" />
+        </button>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col justify-between">
-          {loading ? (
-            <div className="text-center p-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Đang tải...</p>
-            </div>
-          ) : error ? (
-            <div className="text-center p-8">
-              <div className="text-red-600 text-4xl mb-2">❌</div>
-              <p className="text-red-600">{error}</p>
-            </div>
-          ) : detailedPost ? (
-            <div className="flex-1 flex flex-col">
-              {/* Media First (Like user's screenshot) */}
-              {hasMediaFiles() && (
-                <div className="w-full bg-black flex items-center justify-center max-h-[600px] overflow-hidden">
-                  {getMediaFiles().map((file, index) => (
-                    <div key={index} className="w-full h-full flex items-center justify-center">
-                      {file.fileType === 'IMAGE' ? (
-                        <img
-                          src={file.fileUrl.startsWith('http') ? file.fileUrl : `http://localhost:8081${file.fileUrl}`}
-                          alt="Post media"
-                          className="w-full h-auto object-contain max-h-[600px]"
-                          onError={(e) => {
-                            console.error('Image load error:', file.fileUrl);
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
-                      ) : file.fileType === 'VIDEO' ? (
-                        <video
-                          src={file.fileUrl.startsWith('http') ? file.fileUrl : `http://localhost:8081${file.fileUrl}`}
-                          controls
-                          className="w-full h-auto max-h-[600px]"
-                          onError={() => {
-                            console.error('Video load error:', file.fileUrl);
-                          }}
-                        />
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-              )}
+        {mediaFiles.length > 1 && (
+          <>
+            {currentMediaIndex > 0 && (
+              <button
+                onClick={() => setCurrentMediaIndex(prev => prev - 1)}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white bg-opacity-20 hover:bg-opacity-40 rounded-full flex items-center justify-center text-white transition-colors z-10"
+              >
+                <FontAwesomeIcon icon={["fas", "chevron-left"]} className="text-2xl" />
+              </button>
+            )}
+            {currentMediaIndex < mediaFiles.length - 1 && (
+              <button
+                onClick={() => setCurrentMediaIndex(prev => prev + 1)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white bg-opacity-20 hover:bg-opacity-40 rounded-full flex items-center justify-center text-white transition-colors z-10"
+              >
+                <FontAwesomeIcon icon={["fas", "chevron-right"]} className="text-2xl" />
+              </button>
+            )}
+          </>
+        )}
 
-              {/* Post Info */}
-              <div className="p-4 bg-white">
-                <div className="flex items-center space-x-3 mb-3">
+        {currentMedia && (
+          <div className="w-full h-full flex items-center justify-center p-4">
+            {currentMedia.fileType === 'IMAGE' ? (
+              <img
+                src={currentMedia.fileUrl.startsWith('http') ? currentMedia.fileUrl : `http://localhost:8081${currentMedia.fileUrl}`}
+                alt="Post media"
+                className="max-w-full max-h-full object-contain"
+              />
+            ) : (
+              <video
+                src={currentMedia.fileUrl.startsWith('http') ? currentMedia.fileUrl : `http://localhost:8081${currentMedia.fileUrl}`}
+                controls
+                className="max-w-full max-h-full"
+              />
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Right Side: Post Details & Comments */}
+      <div className="w-full md:w-[360px] lg:w-[400px] bg-white flex flex-col h-screen shrink-0 border-l border-gray-200">
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : error ? (
+          <div className="flex-1 flex items-center justify-center p-4 text-center">
+            <p className="text-red-600">{error}</p>
+          </div>
+        ) : detailedPost ? (
+          <>
+            <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col justify-between">
+              <div className="flex-1 flex flex-col">
+                {/* Post Header */}
+                <div className="p-4 flex items-start space-x-3">
                   <UserAvatarWithModal
                     src={detailedPost.author?.avatar}
                     userId={detailedPost.author?.id}
                     name={detailedPost.author?.name}
                     size="md"
                   />
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-[15px] text-gray-900 leading-tight">
                       {detailedPost.author?.name || 'Người dùng'}
                     </h3>
@@ -282,49 +237,28 @@ export default function PostDetailModal({
                       <span>{getPrivacyLabel(detailedPost.privacy)}</span>
                     </div>
                   </div>
-                  <button className="text-gray-500 hover:bg-gray-100 p-2 rounded-full transition-colors">
+                  <button className="text-gray-500 hover:bg-gray-100 w-8 h-8 rounded-full transition-colors flex items-center justify-center shrink-0">
                     <FontAwesomeIcon icon={["fas", "ellipsis"]} />
                   </button>
                 </div>
 
                 {/* Post Content */}
-                <div className="mb-4 text-[15px] text-gray-900 whitespace-pre-wrap">
+                <div className="px-4 pb-3 text-[15px] text-gray-900 whitespace-pre-wrap break-words">
                   {detailedPost.content}
                 </div>
 
-                {/* Documents */}
-                {getDocumentFiles().length > 0 && (
-                  <div className="mb-4">
-                    <div className="space-y-2">
-                      {getDocumentFiles().map((file, index) => (
-                        <a
-                          key={index}
-                          href={file.url.startsWith('http') ? file.url : `http://localhost:8081${file.url}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center space-x-2 p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
-                        >
-                          <span className="text-2xl">{getFileIcon(file.type)}</span>
-                          <span className="text-[15px] font-medium text-gray-900 truncate">
-                            {file.name}
-                          </span>
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Reactions */}
-                <div className="py-2 border-b border-gray-200">
+                {/* Reactions Count */}
+                <div className="px-4 py-2 border-b border-gray-200">
                   <ReactionCounts
                     postId={detailedPost.id}
                     reactions={detailedPost.reactions}
                     onOpenReactionsModal={() => {}}
+                    className="px-0 py-0"
                   />
                 </div>
 
-                {/* Footer: Actions */}
-                <div className="flex items-center justify-between py-1 border-b border-gray-200 px-2">
+                {/* Action Buttons */}
+                <div className="flex items-center justify-between px-2 py-1 border-b border-gray-200 relative">
                   <div
                     className="flex-1 relative"
                     onMouseEnter={showReactionBarHandler}
@@ -332,8 +266,10 @@ export default function PostDetailModal({
                   >
                     <button
                       onClick={async () => {
-                        const currentUserReactionEmotion = getCurrentUserReaction();
-                        const targetEmotion = currentUserReactionEmotion || "like";
+                        const currentUserReaction = detailedPost.reactions?.find(
+                          (r) => String(r.userId) === String(user?.id)
+                        );
+                        const targetEmotion = currentUserReaction?.emotionType || "like";
                         await handleReactionSelect(targetEmotion as EmotionType);
                       }}
                       className={`w-full flex items-center justify-center space-x-2 py-2 rounded-lg transition-colors font-semibold text-[15px] ${
@@ -351,9 +287,7 @@ export default function PostDetailModal({
                       </div>
                     )}
                   </div>
-                  <button
-                    className="flex-1 flex items-center justify-center space-x-2 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-semibold text-[15px]"
-                  >
+                  <button className="flex-1 flex items-center justify-center space-x-2 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-semibold text-[15px]">
                     <FontAwesomeIcon icon={["far", "comment"]} className="text-lg" />
                     <span>Bình luận</span>
                   </button>
@@ -362,8 +296,7 @@ export default function PostDetailModal({
                     <span>Chia sẻ</span>
                   </button>
                 </div>
-
-                {/* Comments Section */}
+                {/* Comments Section (Takes remaining space and scrolls comments list) */}
                 <CommentsModal
                   isOpen={true}
                   onClose={() => {}}
@@ -373,8 +306,8 @@ export default function PostDetailModal({
                 />
               </div>
             </div>
-          ) : null}
-        </div>
+          </>
+        ) : null}
       </div>
     </div>,
     document.body

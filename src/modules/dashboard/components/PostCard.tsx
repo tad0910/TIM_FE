@@ -10,7 +10,8 @@ import EditPostModal from "../../../components/EditPostModal";
 import DeleteConfirmDialog from "../../../components/DeleteConfirmDialog";
 import PrivacySettings from "../../../components/PrivacySettings";
 import ModernPhotoGrid from "../../../components/ModernPhotoGrid";
-import CommentsModal from "./CommentsModal";
+import PostDetailModal from "./PostDetailModal";
+import PhotoViewerModal from "./PhotoViewerModal";
 import UserAvatarWithModal from "../../../components/UserAvatarWithModal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import "../../../fontawesome";
@@ -42,15 +43,19 @@ export default function PostCard({
 }: PostCardProps) {
   const [showActions, setShowActions] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showPhotoViewer, setShowPhotoViewer] = useState(false);
+  const [initialMediaIndex, setInitialMediaIndex] = useState(0);
   const actionsButtonRef = useRef<HTMLButtonElement>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPrivacySettings, setShowPrivacySettings] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showReactionBar, setShowReactionBar] = useState(false);
   const hideReactionBarTimeoutRef = useRef<number | null>(null);
+  const showReactionBarTimeoutRef = useRef<number | null>(null);
   const [showReactionsModal, setShowReactionsModal] = useState(false);
   const [reactionOfCurrentUser, setReactionOfCurrentUser] =
     useState<EmotionType | null>(null);
+  const [localReactions, setLocalReactions] = useState<Reaction[]>(post.reactions || []);
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const isAdmin = useIsAdminSimple();
@@ -124,6 +129,7 @@ export default function PostCard({
   
   useEffect(() => {
     if (!user?.id || !post.reactions) return;
+    setLocalReactions(post.reactions);
     
     const currentUserReaction = post.reactions.find(
       (r: { userId: string | number; emotionType: EmotionType }) =>
@@ -132,10 +138,34 @@ export default function PostCard({
     const emotion = currentUserReaction?.emotionType as EmotionType | undefined;
     setReactionOfCurrentUser(emotion ?? null);
   }, [post.reactions, user?.id]);
+  
+  useEffect(() => {
+    const handler = async (e: Event) => {
+      const detail = (e as CustomEvent).detail as { targetType: 'post'; targetId: string };
+      if (detail && detail.targetType === 'post' && detail.targetId === post.id) {
+        try {
+          // Refetch reactions for this post from API to stay in sync
+          const newReactions = await reactionsApi.getReactionsByPostId(post.id);
+          setLocalReactions(newReactions);
+          const currentUserReaction = newReactions.find(
+            (r) => String(r.userId) === String(user?.id)
+          );
+          setReactionOfCurrentUser(currentUserReaction?.emotionType as EmotionType | undefined ?? null);
+        } catch (err) {
+          console.error("Failed to refetch reactions", err);
+        }
+      }
+    };
+    window.addEventListener('reaction-updated', handler as EventListener);
+    return () => window.removeEventListener('reaction-updated', handler as EventListener);
+  }, [post.id, user?.id]);
   useEffect(() => {
     return () => {
       if (hideReactionBarTimeoutRef.current) {
         clearTimeout(hideReactionBarTimeoutRef.current);
+      }
+      if (showReactionBarTimeoutRef.current) {
+        clearTimeout(showReactionBarTimeoutRef.current);
       }
     };
   }, []);
@@ -276,22 +306,7 @@ export default function PostCard({
         return "Công khai";
     }
   };
-  const updateReactionsInCache = (updater: (reactions: Reaction[]) => Reaction[]) => {
-    queryClient.setQueriesData<Post[]>(
-      { queryKey: ["posts"] },
-      (old) => {
-        if (!old) return old;
-        return old.map((p) =>
-          p.id === post.id
-            ? {
-                ...p,
-                reactions: updater(Array.isArray(p.reactions) ? p.reactions : []),
-              }
-            : p
-        );
-      }
-    );
-  };
+  // Removed updateReactionsInCache since we use localReactions
 
   const handleReactionSelect = async (emotion: EmotionType) => {
     if (!user?.id) return;
@@ -299,7 +314,7 @@ export default function PostCard({
       if (reactionOfCurrentUser === emotion) {
         await reactionsApi.deletePostReaction(post.id, { userId: user.id });
         setReactionOfCurrentUser(null);
-        updateReactionsInCache((reactions) =>
+        setLocalReactions((reactions) =>
           reactions.filter((r) => String(r.userId) !== String(user.id))
         );
       } else {
@@ -308,11 +323,11 @@ export default function PostCard({
           emotionType: emotion,
         });
         setReactionOfCurrentUser(emotion);
-        updateReactionsInCache((reactions) => {
+        setLocalReactions((reactions) => {
           const withoutCurrent = reactions.filter(
             (r) => String(r.userId) !== String(user.id)
           );
-          return [...withoutCurrent, newReaction];
+          return [...withoutCurrent, newReaction as Reaction];
         });
       }
       window.dispatchEvent(
@@ -456,7 +471,10 @@ export default function PostCard({
         {(post.image || post.images) && (
           <div
             className="bg-gray-100 p-1 cursor-pointer hover:bg-gray-200 transition-colors relative group rounded-none overflow-hidden"
-            onClick={() => navigate(`/post/${post.id}`)}
+            onClick={() => {
+                setInitialMediaIndex(0);
+                setShowPhotoViewer(true);
+            }}
             title="Click để xem chi tiết"
           >
             <ModernPhotoGrid
@@ -474,7 +492,7 @@ export default function PostCard({
         {(post.video || post.videos) && (
           <div
             className="bg-gray-100 p-1 cursor-pointer hover:bg-gray-200 transition-colors relative group rounded-none"
-            onClick={() => navigate(`/post/${post.id}`)}
+            onClick={() => setShowComments(true)}
             title="Click để xem chi tiết"
           >
             {(post.videos || []).map((videoUrl, index) => (
@@ -558,6 +576,7 @@ export default function PostCard({
           <div className="flex items-center justify-between">
             <ReactionCounts
               postId={post.id}
+              reactions={localReactions}
               onOpenReactionsModal={() => setShowReactionsModal(true)}
               className="px-0 py-0"
             />
@@ -579,10 +598,16 @@ export default function PostCard({
                 clearTimeout(hideReactionBarTimeoutRef.current);
                 hideReactionBarTimeoutRef.current = null;
               }
-              updateReactionBarPosition();
-              setShowReactionBar(true);
+              // Add a hover delay for feed reaction bar too
+              showReactionBarTimeoutRef.current = window.setTimeout(() => {
+                updateReactionBarPosition();
+                setShowReactionBar(true);
+              }, 500);
             }}
             onMouseLeave={() => {
+              if (showReactionBarTimeoutRef.current) {
+                clearTimeout(showReactionBarTimeoutRef.current);
+              }
               hideReactionBarTimeoutRef.current = window.setTimeout(() => {
                 setShowReactionBar(false);
                 hideReactionBarTimeoutRef.current = null;
@@ -651,13 +676,24 @@ export default function PostCard({
             onClick={() => setShowComments(true)}
             className="hover:text-blue-600 transition-colors"
           >
-            <FontAwesomeIcon icon={["far", "comment"]} /> Comment
+            <FontAwesomeIcon icon={["far", "comment"]} /> Bình luận
           </button>
           <button className="hover:text-blue-600 transition-colors">
-            <FontAwesomeIcon icon={["far", "share-from-square"]} /> Share
+            <FontAwesomeIcon icon={["far", "share-from-square"]} /> Chia sẻ
           </button>
         </div>
       </div>
+      <PhotoViewerModal
+        post={post}
+        isOpen={showPhotoViewer}
+        onClose={() => setShowPhotoViewer(false)}
+        initialMediaIndex={initialMediaIndex}
+      />
+      <PostDetailModal
+        post={post}
+        isOpen={showComments}
+        onClose={() => setShowComments(false)}
+      />
       <EditPostModal
         post={post}
         isOpen={showEditModal}
@@ -676,18 +712,6 @@ export default function PostCard({
         isOpen={showPrivacySettings}
         onSuccess={handlePostUpdated}
         onClose={() => setShowPrivacySettings(false)}
-      />
-      <CommentsModal
-        isOpen={showComments}
-        onClose={() => setShowComments(false)}
-        postId={post.id}
-        postOwnerId={post.author?.id}
-        onCommentAdded={() => {
-          setCommentCount((prev) => prev + 1);
-        }}
-        onCommentDeleted={() => {
-          setCommentCount((prev) => Math.max(0, prev - 1));
-        }}
       />
       <ReactionsModal
         isOpen={showReactionsModal}

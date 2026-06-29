@@ -1,4 +1,3 @@
-import { Dialog } from "@headlessui/react";
 import { useEffect, useState, useRef } from "react";
 import { useAuthStore } from "../../../store/useAuthStore";
 import {
@@ -71,6 +70,7 @@ interface CommentsModalProps {
   postOwnerId?: string;
   onCommentAdded?: () => void;
   onCommentDeleted?: () => void;
+  isSidebarMode?: boolean;
 }
 
 export default function CommentsModal({
@@ -80,6 +80,7 @@ export default function CommentsModal({
   postOwnerId,
   onCommentAdded,
   onCommentDeleted,
+  isSidebarMode = false,
 }: CommentsModalProps) {
   const normalizeApiUrl = (url?: string | null) => {
     if (!url) return url ?? undefined;
@@ -132,6 +133,7 @@ export default function CommentsModal({
     type: "comment" | "reply";
     id: string;
   } | null>(null);
+  const showReactionBarTimeoutRef = useRef<number | null>(null);
   const hideReactionBarTimeoutRef = useRef<number | null>(null);
 
   const [portalPos, setPortalPos] = useState<{
@@ -456,6 +458,7 @@ export default function CommentsModal({
         )
       );
       handleCancelEditComment();
+      showSuccess("Thành công", "Đã cập nhật bình luận");
     } catch (e) {
       console.error("Failed to update comment", e);
     }
@@ -476,6 +479,7 @@ export default function CommentsModal({
       if (onCommentDeleted) {
         onCommentDeleted();
       }
+      showSuccess("Thành công", "Đã xóa bình luận");
     } catch (e) {
       console.error("Failed to delete comment", e);
     }
@@ -517,6 +521,7 @@ export default function CommentsModal({
         )
       );
       handleCancelEditReply();
+      showSuccess("Thành công", "Đã cập nhật phản hồi");
     } catch (e) {
       console.error("Failed to update reply", e);
     }
@@ -540,6 +545,7 @@ export default function CommentsModal({
         delete newState[replyId];
         return newState;
       });
+      showSuccess("Thành công", "Đã xóa phản hồi");
     } catch (e) {
       console.error("Failed to delete reply", e);
     }
@@ -653,51 +659,42 @@ export default function CommentsModal({
       window.clearTimeout(hideReactionBarTimeoutRef.current);
       hideReactionBarTimeoutRef.current = null;
     }
-    setShowReactionBarFor({ type, id });
-
-    if (btnEl) {
-      const rect = btnEl.getBoundingClientRect();
-      const barWidth = 220;
-      const top = rect.top - 48;
-      const left = rect.left + rect.width / 2 - barWidth / 2;
-      setPortalPos({ top: Math.max(8, top), left: Math.max(8, left) });
-    } else {
-      setPortalPos(null);
+    if (showReactionBarTimeoutRef.current) {
+      window.clearTimeout(showReactionBarTimeoutRef.current);
     }
+    showReactionBarTimeoutRef.current = window.setTimeout(() => {
+      setShowReactionBarFor({ type, id });
+
+      if (btnEl) {
+        const rect = btnEl.getBoundingClientRect();
+        const barWidth = 220;
+        const top = rect.top - 48;
+        const left = rect.left + rect.width / 2 - barWidth / 2;
+        setPortalPos({ top: Math.max(8, top), left: Math.max(8, left) });
+      } else {
+        setPortalPos(null);
+      }
+    }, 500); // 500ms delay like Facebook
   };
 
   const hideReactionBar = () => {
+    if (showReactionBarTimeoutRef.current) {
+      window.clearTimeout(showReactionBarTimeoutRef.current);
+      showReactionBarTimeoutRef.current = null;
+    }
     if (hideReactionBarTimeoutRef.current)
       window.clearTimeout(hideReactionBarTimeoutRef.current);
     hideReactionBarTimeoutRef.current = window.setTimeout(() => {
       setShowReactionBarFor(null);
       setPortalPos(null);
-    }, 150);
+    }, 250);
   };
 
   return (
-    <Dialog open={isOpen} onClose={onClose} className="relative z-50">
-      <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-        aria-hidden="true"
-      />
-
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="bg-white w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-2xl shadow-lg flex flex-col">
-          <div className="flex items-center justify-between border-b px-6 py-3">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <FontAwesomeIcon icon={["fas", "comments"]} /> Bình luận
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-red-500 text-xl leading-none"
-              aria-label="Đóng"
-            >
-              <FontAwesomeIcon icon={["fas", "xmark"]} />
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+    <>
+      <div className={`mt-2 border-t border-gray-100 ${isSidebarMode ? 'flex-1 flex flex-col justify-between' : ''} ${isOpen ? 'block' : 'hidden'}`}>
+        <div className={`flex flex-col ${isSidebarMode ? 'flex-1 justify-between' : ''}`}>
+          <div className={`px-4 py-3 space-y-4 ${isSidebarMode ? '' : 'max-h-[60vh] overflow-y-auto custom-scrollbar'}`}>
             {comments === null ? (
               <CommentsSkeleton />
             ) : comments.length === 0 ? (
@@ -781,7 +778,7 @@ export default function CommentsModal({
             )}
           </div>
 
-          <div className="border-t px-6 py-4 bg-gray-50">
+          <div className="sticky bottom-0 border-t px-6 py-4 bg-gray-50 z-10">
             <div className="flex items-center gap-3">
               <UserAvatar
                 src={(() => {
@@ -908,7 +905,7 @@ export default function CommentsModal({
               </div>
             </div>
           </div>
-        </Dialog.Panel>
+        </div>
       </div>
 
       <NotificationPopup notification={notification} onClose={hideNotification} />
@@ -946,7 +943,7 @@ export default function CommentsModal({
           </div>,
           document.body
         )}
-    </Dialog>
+    </>
   );
 }
 
@@ -1055,6 +1052,12 @@ function CommentItem({
   const handleCommentDelete = () => {
     setIsCommentMenuOpen(false);
     onDeleteComment();
+    showSuccess("Đã xóa bình luận");
+  };
+
+  const handleCommentSave = () => {
+    onSaveEditComment();
+    showSuccess("Đã cập nhật bình luận");
   };
 
   const handleReplyEdit = (replyId: string, currentContent: string) => {
@@ -1062,9 +1065,15 @@ function CommentItem({
     onStartEditReply(replyId, currentContent);
   };
 
+  const handleReplySave = (replyId: string) => {
+    onSaveEditReply(replyId);
+    showSuccess("Đã cập nhật phản hồi");
+  };
+
   const handleReplyDelete = (replyId: string) => {
     setOpenReplyMenuId(null);
     onDeleteReply(replyId);
+    showSuccess("Đã xóa phản hồi");
   };
 
   const handleCommentEditKeyDown = (
@@ -1073,7 +1082,7 @@ function CommentItem({
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       e.stopPropagation();
-      onSaveEditComment();
+      handleCommentSave();
     } else if (e.key === "Escape") {
       e.stopPropagation();
       onCancelEditComment();
@@ -1087,7 +1096,7 @@ function CommentItem({
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       e.stopPropagation();
-      onSaveEditReply(replyId);
+      handleReplySave(replyId);
     } else if (e.key === "Escape") {
       e.stopPropagation();
       onCancelEditReply();
@@ -1095,59 +1104,16 @@ function CommentItem({
   };
 
   return (
-    <div className={`flex gap-3 ${level > 0 ? "ml-10 mt-3" : ""}`}>
+    <div className={`flex gap-2 ${level > 0 ? "ml-12 mt-2" : "mt-4"}`}>
       <img
         src={comment.authorAvatar}
         alt={comment.authorName}
-        className="w-10 h-10 rounded-full object-cover"
+        className="w-8 h-8 rounded-full object-cover mt-1 shrink-0"
       />
-      <div className="flex-1 relative min-w-0">
-        <div className="bg-gray-50 rounded-xl p-3 shadow-sm">
-          <div className="flex items-start justify-between">
-            <p className="font-semibold text-gray-900">{comment.authorName}</p>
-
-            {canDeleteComment ? (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">
-                  {formatTimeAgo(comment.createdAt)}
-                </span>
-                <div className="relative">
-                  <button
-                    className="p-1 rounded hover:bg-gray-100 text-gray-600"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsCommentMenuOpen((prev) => !prev);
-                    }}
-                  >
-                    <FontAwesomeIcon icon={["fas", "ellipsis-vertical"]} />
-                  </button>
-
-                  {isCommentMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-100 rounded shadow-lg z-50">
-                      {isMyComment && (
-                        <button
-                          className="w-full text-left px-3 py-2 hover:bg-gray-50"
-                          onClick={handleCommentEdit}
-                        >
-                          Chỉnh sửa
-                        </button>
-                      )}
-                      <button
-                        className="w-full text-left px-3 py-2 text-red-600 hover:bg-gray-50"
-                        onClick={handleCommentDelete}
-                      >
-                        {isAdmin && !isMyComment ? "Xoá (Admin)" : (postOwnerId && currentUserId === postOwnerId && !isMyComment ? "Xoá (Chủ bài viết)" : "Xoá")}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <span className="text-xs text-gray-500">
-                {formatTimeAgo(comment.createdAt)}
-              </span>
-            )}
-          </div>
+      <div className="flex-1 relative min-w-0 flex flex-col items-start group">
+        <div className="flex items-center gap-2 relative z-10 group w-max max-w-[85%]">
+          <div className="bg-[#f0f2f5] rounded-[18px] px-3 py-2 max-w-full inline-block">
+            <p className="font-semibold text-[13px] text-gray-900 leading-tight mb-1">{comment.authorName}</p>
 
           {isEditingComment ? (
             <div className="mt-1 flex items-center gap-2">
@@ -1186,12 +1152,9 @@ function CommentItem({
                 const hasMediaFiles = comment.mediaFiles && comment.mediaFiles.length > 0;
                 const hasLink = !!firstUrl && !hasMediaFiles;
                 
-                console.log('[CommentsModal] Comment content:', comment.content);
-                console.log('[CommentsModal] First URL:', firstUrl, 'hasMediaFiles:', hasMediaFiles, 'hasLink:', hasLink);
-                
                 return (
                   <>
-                    <p className="text-gray-800 mt-0.5 whitespace-pre-wrap break-words">
+                    <p className="text-[13px] text-gray-800 whitespace-pre-wrap break-words">
                       {hasLink && firstUrl ? comment.content.replace(firstUrl, '').trim() : comment.content}
                     </p>
                     {hasLink && firstUrl && (
@@ -1202,46 +1165,75 @@ function CommentItem({
                   </>
                 );
               })()}
-              {comment.mediaFiles && comment.mediaFiles.length > 0 && (
-                <div className="mt-2 space-y-2">
-                  {comment.mediaFiles.map((file, index) => (
-                    <div key={index} className="relative">
-                      {file.fileType === "IMAGE" && (
-                        <img
-                          src={file.fileUrl}
-                          alt="Comment attachment"
-                          className="max-w-[200px] h-[200px] rounded-lg object-cover"
-                          onError={(e) => {
-                            console.error(
-                              "Failed to load image:",
-                              file.fileUrl
-                            );
-                            e.currentTarget.src = "/placeholder-image.png";
-                          }}
-                        />
-                      )}
-                      {file.fileType === "VIDEO" && (
-                        <video
-                          src={file.fileUrl}
-                          controls
-                          className="max-w-[200px] max-h-[200px] rounded-lg"
-                          onError={() => {
-                            console.error(
-                              "Failed to load video:",
-                              file.fileUrl
-                            );
-                          }}
-                        />
-                      )}
-                    </div>
-                  ))}
+            </>
+          )}
+          </div>
+
+          {canDeleteComment && (
+            <div className="absolute top-1/2 -translate-y-1/2 -right-8 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsCommentMenuOpen((prev) => !prev);
+                }}
+              >
+                <FontAwesomeIcon icon={["fas", "ellipsis"]} className="w-4 h-4" />
+              </button>
+
+              {isCommentMenuOpen && (
+                <div className="absolute right-0 mt-1 w-36 bg-white border border-gray-100 rounded-lg shadow-xl z-50 overflow-hidden">
+                  {isMyComment && (
+                    <button
+                      className="w-full text-left px-4 py-2 text-[13px] font-semibold hover:bg-gray-50 transition-colors"
+                      onClick={handleCommentEdit}
+                    >
+                      Chỉnh sửa
+                    </button>
+                  )}
+                  <button
+                    className="w-full text-left px-4 py-2 text-[13px] font-semibold text-red-600 hover:bg-red-50 transition-colors"
+                    onClick={handleCommentDelete}
+                  >
+                    {isAdmin && !isMyComment ? "Xoá (Admin)" : (postOwnerId && currentUserId === postOwnerId && !isMyComment ? "Xoá (Chủ bài viết)" : "Xoá")}
+                  </button>
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
 
-        <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 relative">
+        {/* Media files under the bubble */}
+        {comment.mediaFiles && comment.mediaFiles.length > 0 && (
+          <div className="mt-1 space-y-2">
+            {comment.mediaFiles.map((file, index) => (
+              <div key={index} className="relative">
+                {file.fileType === "IMAGE" && (
+                  <img
+                    src={file.fileUrl}
+                    alt="Comment attachment"
+                    className="max-w-[200px] h-auto rounded-lg object-cover border border-gray-200"
+                    onError={(e) => {
+                      e.currentTarget.src = "/placeholder-image.png";
+                    }}
+                  />
+                )}
+                {file.fileType === "VIDEO" && (
+                  <video
+                    src={file.fileUrl}
+                    controls
+                    className="max-w-[200px] rounded-lg border border-gray-200"
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="flex items-center gap-3 mt-1 ml-3 text-[12px] font-bold text-[#65676b] relative z-0">
+          <span className="font-normal cursor-pointer hover:underline">
+            {formatTimeAgo(comment.createdAt)}
+          </span>
           <div
             className="relative"
             onMouseEnter={() =>
@@ -1251,10 +1243,8 @@ function CommentItem({
           >
             <button
               ref={likeBtnRef}
-              className={`flex items-center gap-2 ${
-                myCommentReaction
-                  ? "font-semibold text-blue-600"
-                  : "hover:text-blue-600"
+              className={`hover:underline flex items-center gap-1 ${
+                myCommentReaction ? "text-blue-600" : ""
               }`}
               onClick={async () => {
                 const targetEmotion: EmotionType = myCommentReaction || "like";
@@ -1262,27 +1252,29 @@ function CommentItem({
               }}
             >
               {myCommentReaction ? (
-                <img
-                  src={getReactionIcon(myCommentReaction)}
-                  alt={myCommentReaction || ""}
-                  className="w-4 h-4"
-                />
+                <span>{capitalize(myCommentReaction)}</span>
               ) : (
-                <FontAwesomeIcon icon={["far", "thumbs-up"]} />
-              )}
-              <span>
-                {myCommentReaction ? capitalize(myCommentReaction) : "Like"}
-              </span>
-              {totalCommentReactions > 0 && (
-                <span className="text-xs text-gray-400 ml-1">
-                  · {totalCommentReactions}
-                </span>
+                <span>Thích</span>
               )}
             </button>
           </div>
-          <button className="hover:text-blue-600" onClick={onToggleReply}>
-            Reply
+          <button className="hover:underline" onClick={onToggleReply}>
+            Phản hồi
           </button>
+          
+          {totalCommentReactions > 0 && (
+            <div className="flex items-center gap-1 cursor-pointer hover:underline text-[#65676b] font-normal ml-2">
+              <div className="flex -space-x-1">
+                {Object.entries(commentReactionData.counts || {})
+                  .filter(([_, count]) => count > 0)
+                  .map(([type, _]) => (
+                    <img key={type} src={getReactionIcon(type as EmotionType)} alt={type} className="w-4 h-4 rounded-full border border-white" />
+                  ))
+                }
+              </div>
+              <span>{totalCommentReactions}</span>
+            </div>
+          )}
         </div>
 
         {isReplying &&

@@ -33,9 +33,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
       if (!user?.id) return;
       try {
         const profile = await getUserProfile(user.id);
-        const name =
-          [profile.firstName, profile.lastName].filter(Boolean).join(" ") ||
-          profile.username;
+        const name = [profile.firstName, profile.lastName].filter(Boolean).join(" ") || profile.username;
         setDisplayName(name);
       } catch (error) {
         console.error("Error loading user profile:", error);
@@ -175,56 +173,50 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
               </button>
 
               {isUserMenuOpen && (
-                <div className="absolute right-0 mt-3 w-64 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
-                  <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-sm font-semibold text-gray-900">
-                      {displayName || user?.username || "User"}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">
-                      {user?.username || ""}
-                    </p>
-                  </div>
-
-                  <div className="py-2">
+                <div className="absolute right-0 mt-3 w-[360px] bg-white rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.15)] p-3 z-50">
+                  {/* Top Profile Card */}
+                  <div className="rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.1)] p-1 mb-3 border border-gray-100">
                     <Link
                       to="/profile"
                       onClick={() => setIsUserMenuOpen(false)}
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-medium transition-colors"
+                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
                     >
-                      <svg
-                        className="w-5 h-5 mr-3 text-gray-500"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        />
-                      </svg>
-                      Trang cá nhân
+                      <img
+                        src={avatarUrl && avatarUrl.trim() !== "" ? avatarUrl : "/default-avatar.png"}
+                        alt={user?.username || "User"}
+                        className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "/default-avatar.png";
+                        }}
+                      />
+                      <span className="font-semibold text-[17px] text-gray-900">
+                        {displayName || user?.username || "User"}
+                      </span>
                     </Link>
-
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium transition-colors mt-1"
+                    <hr className="my-1 border-gray-200 mx-2" />
+                    <Link
+                      to="/profile"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="block mx-2 mb-1 mt-1 py-1.5 text-center text-[15px] font-semibold text-blue-600 hover:bg-gray-50 rounded-lg transition-colors"
                     >
-                      <svg
-                        className="w-5 h-5 mr-3 text-red-500"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                        />
-                      </svg>
-                      Đăng xuất
+                      Xem tất cả trang cá nhân
+                    </Link>
+                  </div>
+
+                  {/* Menu Items */}
+                  <div className="flex flex-col gap-1">
+                    <button
+                      className="flex items-center w-full p-2 rounded-lg hover:bg-red-50 transition-colors"
+                      onClick={handleLogout}
+                    >
+                      <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center mr-3">
+                        <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M16 13v-2H7V8l-5 4 5 4v-3z" />
+                          <path d="M20 3h-9c-1.103 0-2 .897-2 2v4h2V5h9v14h-9v-4H9v4c0 1.103.897 2 2 2h9c1.103 0 2-.897 2-2V5c0-1.103-.897-2-2-2z" />
+                        </svg>
+                      </div>
+                      <span className="text-[15px] font-medium text-red-600 flex-1 text-left">Đăng xuất</span>
                     </button>
                   </div>
                 </div>

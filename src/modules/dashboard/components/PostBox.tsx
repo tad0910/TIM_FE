@@ -7,6 +7,7 @@ import { compressImage } from '../../../utils/imageCompression';
 import { getUserProfile } from '../../../services/profileApi';
 import { queryKeys } from '../../../hooks/api/queryKeys';
 import UserAvatar from '../../../components/UserAvatar';
+import ModernPhotoGrid from '../../../components/ModernPhotoGrid';
 import NotificationPopup from '../../../components/NotificationPopup';
 import { useNotification } from '../../../hooks/useNotification';
 import LinkPreview from '../../../components/LinkPreview';
@@ -201,6 +202,8 @@ export default function PostBox({ onPostCreated, marginTop = '10px' }: PostBoxPr
 
 		setIsPosting(true);
 		setUploadProgress(0);
+		setShowCreateModal(false);
+		showInfo("Đang đăng bài...", "Bài viết của bạn đang được xử lý", 0); // 0 means it won't auto-close
 
 		try {
 			const compressedFiles: File[] = [];
@@ -265,8 +268,6 @@ export default function PostBox({ onPostCreated, marginTop = '10px' }: PostBoxPr
 			setLinkPreviewUrl(null);
 			if (fileInputRef.current) fileInputRef.current.value = "";
 			
-			setShowCreateModal(false);
-			
 			onPostCreated();
 			
 			showSuccess("Đăng bài thành công!", "Bài viết đã được đăng thành công");
@@ -284,6 +285,7 @@ export default function PostBox({ onPostCreated, marginTop = '10px' }: PostBoxPr
 			} else {
 				showApiError(error, 'Có lỗi xảy ra khi đăng bài. Vui lòng thử lại sau.', 'Lỗi đăng bài');
 			}
+			setShowCreateModal(true); // Re-open so they don't lose their draft if they want to edit
 		} finally {
 			setIsPosting(false);
 			setUploadProgress(0);
@@ -312,19 +314,23 @@ export default function PostBox({ onPostCreated, marginTop = '10px' }: PostBoxPr
 
 			{showCreateModal && (
 				<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-					<div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-						<div className="flex items-center justify-between p-4 border-b">
-							<h2 className="text-xl font-semibold">Tạo bài viết</h2>
+					<div className="bg-white rounded-xl shadow-xl w-full max-w-[500px] mx-4 max-h-[90vh] flex flex-col overflow-hidden">
+						{/* Header */}
+						<div className="relative flex items-center justify-center p-4 border-b border-gray-200">
+							<h2 className="text-[20px] font-bold text-gray-900">Tạo bài viết</h2>
 							<button
 								onClick={() => setShowCreateModal(false)}
-								className="text-gray-500 hover:text-gray-700"
+								className="absolute right-4 w-9 h-9 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center text-gray-600 transition-colors"
 							>
-								✕
+								<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+								</svg>
 							</button>
 						</div>
 
-						<div className="flex items-center justify-between p-4">
-							<div className="flex items-center gap-3">
+						<div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+							{/* User Info & Privacy */}
+							<div className="flex items-center gap-2 mb-4">
 								<UserAvatar 
 									userId={user?.id}
 									authorName={getDisplayName()}
@@ -333,256 +339,188 @@ export default function PostBox({ onPostCreated, marginTop = '10px' }: PostBoxPr
 									className="w-10 h-10 rounded-full object-cover"
 								/>
 								<div>
-									<p className="font-semibold">{getDisplayName()}</p>
+									<p className="font-semibold text-[15px] leading-tight mb-0.5">{getDisplayName()}</p>
+									<div className="relative inline-block" ref={privacyDropdownRef}>
+										<button
+											type="button"
+											onClick={() => setShowPrivacyDropdown(!showPrivacyDropdown)}
+											className="flex items-center gap-1 px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
+											disabled={isPosting}
+										>
+											{privacy === 'open' && (
+												<>
+													<svg className="w-3 h-3 text-gray-800" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+													<span className="text-[13px] font-semibold text-gray-800">Công khai</span>
+												</>
+											)}
+											{privacy === 'friends' && (
+												<>
+													<svg className="w-3 h-3 text-gray-800" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+													<span className="text-[13px] font-semibold text-gray-800">Bạn bè</span>
+												</>
+											)}
+											{privacy === 'only_me' && (
+												<>
+													<svg className="w-3 h-3 text-gray-800" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+													<span className="text-[13px] font-semibold text-gray-800">Chỉ mình tôi</span>
+												</>
+											)}
+											<svg className="w-3 h-3 text-gray-800 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+										</button>
+										{showPrivacyDropdown && (
+											<div className="absolute left-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-10 py-2">
+												<button
+													type="button"
+													onClick={() => { setPrivacy('open'); setShowPrivacyDropdown(false); }}
+													className={`w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-3 ${privacy === 'open' ? 'bg-blue-50' : ''}`}
+												>
+													<div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+														<svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+													</div>
+													<div>
+														<div className="font-semibold text-[15px] text-gray-900">Công khai</div>
+														<div className="text-[13px] text-gray-500">Mọi người trên hoặc ngoài ALM</div>
+													</div>
+												</button>
+												<button
+													type="button"
+													onClick={() => { setPrivacy('friends'); setShowPrivacyDropdown(false); }}
+													className={`w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-3 ${privacy === 'friends' ? 'bg-blue-50' : ''}`}
+												>
+													<div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+														<svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+													</div>
+													<div>
+														<div className="font-semibold text-[15px] text-gray-900">Bạn bè</div>
+														<div className="text-[13px] text-gray-500">Chỉ bạn bè của bạn</div>
+													</div>
+												</button>
+												<button
+													type="button"
+													onClick={() => { setPrivacy('only_me'); setShowPrivacyDropdown(false); }}
+													className={`w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-3 ${privacy === 'only_me' ? 'bg-blue-50' : ''}`}
+												>
+													<div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+														<svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+													</div>
+													<div>
+														<div className="font-semibold text-[15px] text-gray-900">Chỉ mình tôi</div>
+														<div className="text-[13px] text-gray-500">Chỉ bạn mới có thể xem</div>
+													</div>
+												</button>
+											</div>
+										)}
+									</div>
 								</div>
 							</div>
-							<div className="relative" ref={privacyDropdownRef}>
-								<button
-									type="button"
-									onClick={() => setShowPrivacyDropdown(!showPrivacyDropdown)}
-									className="flex items-center gap-2 px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-									disabled={isPosting}
-								>
-									<span className="text-sm">
-										{privacy === 'open' && '🌍 Công khai'}
-										{privacy === 'friends' && '👥 Bạn bè'}
-										{privacy === 'only_me' && '🔒 Chỉ mình tôi'}
-									</span>
-									<svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-									</svg>
-								</button>
-								{showPrivacyDropdown && (
-									<div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
-										<div className="py-1">
-											<button
-												type="button"
-												onClick={() => {
-													setPrivacy('open');
-													setShowPrivacyDropdown(false);
-												}}
-												className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2 ${
-													privacy === 'open' ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
-												}`}
-											>
-												<span>🌍</span>
-												<div>
-													<div className="font-medium">Công khai</div>
-													<div className="text-xs text-gray-500">Mọi người đều có thể xem</div>
-												</div>
-											</button>
-											<button
-												type="button"
-												onClick={() => {
-													setPrivacy('friends');
-													setShowPrivacyDropdown(false);
-												}}
-												className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2 ${
-													privacy === 'friends' ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
-												}`}
-											>
-												<span>👥</span>
-												<div>
-													<div className="font-medium">Bạn bè</div>
-													<div className="text-xs text-gray-500">Chỉ bạn bè có thể xem</div>
-												</div>
-											</button>
-											<button
-												type="button"
-												onClick={() => {
-													setPrivacy('only_me');
-													setShowPrivacyDropdown(false);
-												}}
-												className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2 ${
-													privacy === 'only_me' ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
-												}`}
-											>
-												<span>🔒</span>
-												<div>
-													<div className="font-medium">Chỉ mình tôi</div>
-													<div className="text-xs text-gray-500">Chỉ bạn có thể xem</div>
-												</div>
-											</button>
-										</div>
-									</div>
-								)}
+
+							{/* Input Area */}
+							<div className="relative mb-3">
+								<textarea
+									value={content}
+									onChange={(e) => setContent(e.target.value)}
+									placeholder={`${getDisplayName().split(' ')[0]} ơi, bạn đang nghĩ gì thế?`}
+									className={`w-full bg-white outline-none resize-none min-h-[150px] ${content.length < 85 ? 'text-[24px]' : 'text-[15px]'} placeholder-gray-500`}
+									rows={3}
+									style={{ overflow: 'hidden', height: 'auto' }}
+									onInput={(e) => {
+										const target = e.target as HTMLTextAreaElement;
+										target.style.height = 'auto';
+										target.style.height = Math.min(target.scrollHeight, 300) + 'px';
+									}}
+								/>
 							</div>
-						</div>
 
-						<div className="px-4">
-							<textarea
-								value={content}
-								onChange={(e) => setContent(e.target.value)}
-								placeholder="Bạn đang nghĩ gì?"
-								className="w-full bg-gray-50 rounded-2xl px-4 py-3 outline-none resize-none min-h-[120px] max-h-[300px]"
-								rows={5}
-								style={{
-									overflow: 'hidden',
-									height: 'auto'
-								}}
-								onInput={(e) => {
-									const target = e.target as HTMLTextAreaElement;
-									target.style.height = 'auto';
-									target.style.height = Math.min(target.scrollHeight, 300) + 'px';
-								}}
-							/>
-						</div>
-
-						{linkPreviewUrl && files.length === 0 && !isPosting && (
-							<div className="px-4 py-2">
-								<div className="relative">
-									<LinkPreview url={linkPreviewUrl} className="max-w-2xl" />
+							{linkPreviewUrl && files.length === 0 && !isPosting && (
+								<div className="mt-3 relative border border-gray-200 rounded-lg overflow-hidden">
+									<LinkPreview url={linkPreviewUrl} className="w-full" />
 									<button
 										onClick={() => {
 											const urlRegex = /(https?:\/\/[^\s]+)/g;
 											setContent(content.replace(urlRegex, '').trim());
 										}}
-										className="absolute top-2 right-2 bg-gray-800 bg-opacity-75 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-opacity-100 transition-opacity"
+										className="absolute top-2 right-2 bg-white rounded-full w-8 h-8 flex items-center justify-center text-gray-700 shadow-md hover:bg-gray-100 transition-colors border border-gray-200"
 										title="Xóa link preview"
 									>
-										×
+										✕
+									</button>
+								</div>
+							)}
+
+							{/* File Previews */}
+							{files.length > 0 && (
+								<div className="mt-3 border border-gray-200 rounded-lg p-2">
+									<div className="relative">
+										{imagePreviews.length > 0 && (
+											<div className="rounded-lg overflow-hidden border border-gray-100">
+												<ModernPhotoGrid
+													images={imagePreviews}
+													onRemove={(index) => removeFile(index, 'image')}
+												/>
+											</div>
+										)}
+										{videoPreviews.length > 0 && (
+											<div className="space-y-1 mt-1">
+												{videoPreviews.map((preview, index) => (
+													<div key={index} className="relative group">
+														<video src={preview} className="w-full h-48 object-cover rounded-lg" controls />
+														<button
+															onClick={() => removeFile(index, 'video')}
+															className="absolute top-2 right-2 bg-white rounded-full w-8 h-8 flex items-center justify-center text-gray-700 shadow-md hover:bg-gray-100 transition-colors border border-gray-200 opacity-0 group-hover:opacity-100"
+														>
+															✕
+														</button>
+													</div>
+												))}
+											</div>
+										)}
+										{documentFiles.length > 0 && (
+											<div className="space-y-1 mt-1">
+												{documentFiles.map((file, index) => (
+													<div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+														<div className="text-2xl">{getFileIcon(file)}</div>
+														<div className="flex-1 min-w-0">
+															<p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+															<p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+														</div>
+														<button
+															onClick={() => removeFile(index, 'document')}
+															className="text-red-500 hover:text-red-700 p-2"
+														>
+															✕
+														</button>
+													</div>
+												))}
+											</div>
+										)}
+										<button onClick={clearAllFiles} className="absolute top-2 right-2 bg-white rounded-full w-8 h-8 flex items-center justify-center text-gray-700 shadow-md hover:bg-gray-100 transition-colors border border-gray-200 z-10">✕</button>
+									</div>
+								</div>
+							)}
+
+
+							{/* Add to your post section */}
+							<div className="mt-4 border border-gray-300 rounded-lg p-3 flex items-center justify-between shadow-sm">
+								<span className="font-semibold text-[15px] text-gray-900 ml-1">Thêm vào bài viết của bạn</span>
+								<div className="flex items-center gap-1">
+									<button onClick={() => fileInputRef.current?.click()} className="p-2 hover:bg-gray-100 rounded-full transition-colors tooltip-trigger relative" title="Ảnh/Video/Tài liệu">
+										<svg className="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
 									</button>
 								</div>
 							</div>
-						)}
 
-						{files.length === 0 && !linkPreviewUrl && !isPosting && (
-							<div className="px-4 py-2">
-								<div 
-									className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer"
-									onClick={() => fileInputRef.current?.click()}
-								>
-									<svg className="w-8 h-8 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-									</svg>
-									<p className="text-gray-600">Kéo thả file vào đây hoặc click để chọn</p>
-									<p className="text-sm text-gray-400 mt-1">Hỗ trợ: ảnh, video, PDF, DOC, XLS, PPT, TXT, ZIP</p>
-								</div>
-							</div>
-						)}
-
-						{files.length > 0 && (
-							<div className="px-4 py-2">
-								{imagePreviews.length > 0 && (
-									<div className="mb-4">
-										<h3 className="text-sm font-medium text-gray-700 mb-2">Hình ảnh</h3>
-										<div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-											{imagePreviews.map((preview, index) => (
-												<div key={index} className="relative group">
-													<img
-														src={preview}
-														alt={`Preview ${index + 1}`}
-														className="w-full h-24 object-cover rounded-lg"
-													/>
-													<button
-														onClick={() => removeFile(index, 'image')}
-														className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-													>
-														×
-													</button>
-												</div>
-											))}
-										</div>
-									</div>
-								)}
-
-								{videoPreviews.length > 0 && (
-									<div className="mb-4">
-										<h3 className="text-sm font-medium text-gray-700 mb-2">Video</h3>
-										<div className="space-y-2">
-											{videoPreviews.map((preview, index) => (
-												<div key={index} className="relative group">
-													<video
-														src={preview}
-														className="w-full h-32 object-cover rounded-lg"
-														controls
-													/>
-													<button
-														onClick={() => removeFile(index, 'video')}
-														className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-													>
-														×
-													</button>
-												</div>
-											))}
-										</div>
-									</div>
-								)}
-
-								{documentFiles.length > 0 && (
-									<div className="mb-4">
-										<h3 className="text-sm font-medium text-gray-700 mb-2">Tài liệu</h3>
-										<div className="space-y-2">
-											{documentFiles.map((file, index) => (
-												<div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-													<div className="text-2xl">{getFileIcon(file)}</div>
-													<div className="flex-1 min-w-0">
-														<p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
-														<p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
-													</div>
-													<button
-														onClick={() => removeFile(index, 'document')}
-														className="text-red-500 hover:text-red-700"
-													>
-														×
-													</button>
-												</div>
-											))}
-										</div>
-									</div>
-								)}
-
-								<button
-									onClick={clearAllFiles}
-									className="text-sm text-red-500 hover:text-red-700"
-								>
-									Xóa tất cả
-								</button>
-							</div>
-						)}
-
-						{isPosting && (
-							<div className="px-4 py-2">
-								<div className="bg-gray-200 rounded-full h-2">
-									<div 
-										className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-										style={{ width: `${uploadProgress}%` }}
-									/>
-								</div>
-								<p className="text-sm text-gray-600 mt-1">Đang đăng bài...</p>
-							</div>
-						)}
-
-						{/* Action Buttons */}
-						<div className="flex items-center justify-between p-4 border-t">
-							<div className="flex items-center gap-4">
-								<button
-									type="button"
-									onClick={() => fileInputRef.current?.click()}
-									className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
-									disabled={isPosting}
-								>
-									<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-									</svg>
-									<span className="text-sm">Đính kèm</span>
-								</button>
-							</div>
-							<div className="flex items-center gap-2">
-								<button
-									type="button"
-									onClick={() => setShowCreateModal(false)}
-									className="px-4 py-2 text-gray-600 hover:text-gray-800"
-									disabled={isPosting}
-								>
-									Hủy
-								</button>
+							{/* Submit Button */}
+							<div className="mt-4 mb-2">
 								<button
 									onClick={handleSubmit}
 									disabled={isPosting || (!content.trim() && files.length === 0)}
-									className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+									className={`w-full py-2.5 rounded-lg font-semibold text-[15px] transition-colors ${
+										(!content.trim() && files.length === 0) || isPosting
+											? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+											: 'bg-blue-600 text-white hover:bg-blue-700'
+									}`}
 								>
-									{isPosting ? 'Đang đăng...' : 'Đăng'}
+									Đăng
 								</button>
 							</div>
 						</div>

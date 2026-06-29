@@ -138,17 +138,17 @@ export default function PostDetailPage() {
 
   return (
     <>
-      <div className="h-screen flex flex-col lg:flex-row" style={{ backgroundColor: '#F2F4F7' }}>
-        <div className="flex-1 lg:flex-[2] lg:min-h-0">
+      <div className="fixed inset-0 flex flex-col lg:flex-row bg-black z-50">
+        {/* Left Side: Media Viewer */}
+        <div className="flex-1 min-h-[50vh] lg:min-h-0 relative bg-black flex flex-col">
           <PostMediaViewer 
             post={post} 
             onClose={() => navigate(-1)} 
           />
         </div>
 
-        <div className="flex-1 lg:flex-[1] lg:min-w-0 lg:max-w-md flex flex-col relative z-10">
-          <PostDetailNavbar />
-          
+        {/* Right Side: Post Details Panel */}
+        <div className="w-full lg:w-[360px] xl:w-[400px] flex flex-col bg-white shrink-0 relative z-10 lg:border-l border-t lg:border-t-0 border-gray-200 overflow-hidden">
           <PostDetailPanel
             post={post}
             onEdit={handleEdit}

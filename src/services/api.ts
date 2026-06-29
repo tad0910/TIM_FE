@@ -75,6 +75,22 @@ const resolveAccessToken = async (authMode: AuthMode): Promise<string | null> =>
   return readLocalStorageToken(AUTH_TOKEN_KEY);
 };
 
+const forceLogoutAndRedirect = async () => {
+  if (!isBrowser) return;
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorage.removeItem(AUTH_MODE_KEY);
+  try {
+    const { useAuthStore } = await import("../store/useAuthStore");
+    useAuthStore.getState().logout();
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn("[api] Failed to clear auth store:", error);
+    }
+  }
+  window.location.href = "/login?relogin=true";
+};
+
 let isRefreshing = false;
 let refreshPromise: Promise<string> | null = null;
 
@@ -221,7 +237,7 @@ async function request<TResponse = unknown>(
         if (isBrowser) {
           localStorage.removeItem(AUTH_TOKEN_KEY);
           localStorage.removeItem(AUTH_MODE_KEY);
-          window.location.href = "/login?relogin=true";
+          await forceLogoutAndRedirect();
         }
       }
 
@@ -237,10 +253,7 @@ async function request<TResponse = unknown>(
         console.warn("[api] No refresh token available for local mode");
       }
       if (isBrowser) {
-        localStorage.removeItem(AUTH_TOKEN_KEY);
-        localStorage.removeItem(REFRESH_TOKEN_KEY);
-        localStorage.removeItem(AUTH_MODE_KEY);
-        window.location.href = "/login?relogin=true";
+        await forceLogoutAndRedirect();
       }
       throw new ApiError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", 401);
     }
@@ -266,7 +279,7 @@ async function request<TResponse = unknown>(
           console.error("[api] Failed while waiting for refresh:", waitError);
         }
         if (isBrowser) {
-          window.location.href = "/login?relogin=true";
+          await forceLogoutAndRedirect();
         }
         throw new ApiError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", 401);
       }
@@ -342,10 +355,7 @@ async function request<TResponse = unknown>(
             console.error("[api] Retry still failed with 401, clearing tokens");
           }
           if (isBrowser) {
-            localStorage.removeItem(AUTH_TOKEN_KEY);
-            localStorage.removeItem(REFRESH_TOKEN_KEY);
-            localStorage.removeItem(AUTH_MODE_KEY);
-            window.location.href = "/login?relogin=true";
+            await forceLogoutAndRedirect();
           }
           if (import.meta.env.DEV) {
             console.error("[api] 401 Error details:", await readResponseText());
@@ -360,10 +370,7 @@ async function request<TResponse = unknown>(
           console.error("[api] Token refresh process failed:", refreshError);
         }
         if (isBrowser) {
-          localStorage.removeItem(AUTH_TOKEN_KEY);
-          localStorage.removeItem(REFRESH_TOKEN_KEY);
-          localStorage.removeItem(AUTH_MODE_KEY);
-          window.location.href = "/login?relogin=true";
+          await forceLogoutAndRedirect();
         }
         throw new ApiError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", 401);
       }

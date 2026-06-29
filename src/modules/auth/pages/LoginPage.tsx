@@ -15,7 +15,12 @@ export default function AuthPage() {
   const [activeForm, setActiveForm] = useState<"login" | "signup">("login");
   const [isAnimating, setIsAnimating] = useState(false);
   const [overlayContent, setOverlayContent] = useState<"login" | "signup">("login");
-  const [usernameOrEmail, setUsernameOrEmail] = useState("");
+  const [rememberMe, setRememberMe] = useState(() => {
+    return localStorage.getItem("remembered_username") !== null;
+  });
+  const [usernameOrEmail, setUsernameOrEmail] = useState(() => {
+    return localStorage.getItem("remembered_username") || "";
+  });
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -151,6 +156,12 @@ export default function AuthPage() {
       localStorage.setItem("auth_token", accessToken);
       localStorage.setItem("refresh_token", refreshToken);
       localStorage.setItem("auth_mode", "local");
+      
+      if (rememberMe) {
+        localStorage.setItem("remembered_username", usernameOrEmail);
+      } else {
+        localStorage.removeItem("remembered_username");
+      }
 
       const user = {
         id: userInfo.id.toString(),
@@ -296,7 +307,12 @@ export default function AuthPage() {
 
               <div className="flex items-center justify-between text-sm">
                 <label className="flex items-center space-x-2">
-                  <input type="checkbox" className="accent-indigo-600" />
+                  <input 
+                    type="checkbox" 
+                    className="accent-indigo-600" 
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
                   <span>Remember me</span>
                 </label>
                 <Link to="/forgot-password" className="text-indigo-600 hover:underline">
