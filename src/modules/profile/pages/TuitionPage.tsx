@@ -9,6 +9,7 @@ import { useAuthStore } from '../../../store/useAuthStore';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faDownload, faEye } from '@fortawesome/free-solid-svg-icons';
 import { getUserProfile, getUserById } from '../../../services/profileApi';
+import PageLayout from '../../../components/layout/PageLayout';
 
 export default function TuitionPage() {
   const [overview, setOverview] = useState<TuitionOverview | null>(null);
@@ -119,38 +120,42 @@ export default function TuitionPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <LoadingSpinner size="lg" />
-          <p className="mt-4 text-gray-600">Đang tải dữ liệu học phí...</p>
+      <PageLayout title="Học phí" description="Quản lý và theo dõi thông tin học phí của bạn.">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <LoadingSpinner size="lg" />
+            <p className="mt-4 text-gray-500">Đang tải dữ liệu học phí...</p>
+          </div>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-600 mb-4">
-            <FontAwesomeIcon icon={faEye} size="3x" />
+      <PageLayout title="Học phí" description="Quản lý và theo dõi thông tin học phí của bạn.">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-md">
+            <div className="text-red-500 mb-4">
+              <FontAwesomeIcon icon={faEye} size="3x" />
+            </div>
+            <p className="text-gray-700 font-medium mb-6">{error}</p>
+            <button
+              onClick={loadData}
+              className="px-6 py-2.5 bg-[#1E3A8A] text-white rounded-lg hover:bg-blue-800 transition-colors shadow-sm font-medium"
+            >
+              Thử lại
+            </button>
           </div>
-          <p className="text-red-600 font-medium mb-4">{error}</p>
-          <button
-            onClick={loadData}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Thử lại
-          </button>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="bg-white border border-gray-200 rounded-xl px-6 py-5 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+    <PageLayout title="Học phí" description="Quản lý và theo dõi thông tin học phí của bạn.">
+      <div className="w-full space-y-6">
+        <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
             <h2 className="text-xl md:text-2xl font-bold text-gray-900">
               {(fullName && fullName.trim()) || (user as any)?.fullName || (user as any)?.name || user?.username || 'Học viên'}
@@ -158,29 +163,29 @@ export default function TuitionPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-          <div className="rounded-lg border bg-white p-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 transition-all hover:shadow-md">
             <div className="text-xs font-medium text-gray-500 mb-1">Tổng học phí toàn khóa</div>
             <div className="text-2xl font-bold text-gray-900">
               <CurrencyDisplay amount={totalAmount} />
             </div>
           </div>
 
-          <div className="rounded-lg border bg-white p-5">
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 transition-all hover:shadow-md">
             <div className="text-xs font-medium text-gray-500 mb-1">Đã thanh toán</div>
             <div className="text-2xl font-bold text-gray-900">
               <CurrencyDisplay amount={paidAmount} />
             </div>
           </div>
 
-          <div className="rounded-lg border bg-white p-5">
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 transition-all hover:shadow-md">
             <div className="text-xs font-medium text-gray-500 mb-1">Nợ hiện tại</div>
             <div className="text-2xl font-bold text-gray-900">
               <CurrencyDisplay amount={remainingAmount} />
             </div>
           </div>
 
-          <div className="rounded-lg border bg-white p-5">
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 transition-all hover:shadow-md">
             <div className="text-xs font-medium text-gray-500 mb-1">Được miễn giảm</div>
             <div className="text-2xl font-bold text-gray-900">
               <CurrencyDisplay amount={waivedAmount} />
@@ -189,8 +194,8 @@ export default function TuitionPage() {
         </div>
 
         {groupedSchedules.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-[#F8FAFC]">
               <div className="flex items-center gap-2 text-gray-800 font-semibold">
                 Các hồ sơ học phí & đợt còn nợ
               </div>
@@ -212,14 +217,14 @@ export default function TuitionPage() {
 
                   <div className="mt-4 overflow-x-auto">
                     <table className="min-w-full text-sm border rounded-lg overflow-hidden">
-                      <thead className="bg-gray-50">
+                      <thead className="bg-[#F8FAFC]">
                         <tr>
-                          <th className="px-4 py-2 text-left border">Đợt</th>
-                          <th className="px-4 py-2 text-left border">Hạn đóng</th>
-                          <th className="px-4 py-2 text-right border">Số tiền</th>
-                          <th className="px-4 py-2 text-right border">Đã đóng</th>
-                          <th className="px-4 py-2 text-right border">Còn nợ</th>
-                          <th className="px-4 py-2 text-left border">Trạng thái</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đợt</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hạn đóng</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Số tiền</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Đã đóng</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Còn nợ</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -236,14 +241,13 @@ export default function TuitionPage() {
                             else if (isPast) statusForTag = 'OVERDUE';
                           }
                           return (
-                            <tr key={sch.id} className="hover:bg-gray-50">
-                              <td className="px-4 py-2 border">Đợt {sch.installmentNumber}</td>
-                              <td className="px-4 py-2 border">{sch.dueDate || '-'}
-                              </td>
-                              <td className="px-4 py-2 border text-right"><CurrencyDisplay amount={expected} /></td>
-                              <td className="px-4 py-2 border text-right"><CurrencyDisplay amount={paid} /></td>
-                              <td className="px-4 py-2 border text-right text-red-600"><CurrencyDisplay amount={remaining} /></td>
-                              <td className="px-4 py-2 border text-left text-xs">
+                            <tr key={sch.id} className="hover:bg-[#F8FAFC]">
+                              <td className="px-6 py-4 text-sm text-gray-900">Đợt {sch.installmentNumber}</td>
+                              <td className="px-6 py-4 text-sm text-gray-900">{sch.dueDate || '-'}</td>
+                              <td className="px-6 py-4 text-right text-sm text-gray-900"><CurrencyDisplay amount={expected} /></td>
+                              <td className="px-6 py-4 text-right text-sm text-gray-900"><CurrencyDisplay amount={paid} /></td>
+                              <td className="px-6 py-4 text-right text-sm font-semibold text-red-600"><CurrencyDisplay amount={remaining} /></td>
+                              <td className="px-6 py-4 text-left">
                                 <PaymentStatusTag status={statusForTag as any} />
                               </td>
                             </tr>
@@ -258,8 +262,8 @@ export default function TuitionPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-[#F8FAFC]">
             <div className="flex items-center gap-2 text-gray-800 font-semibold">
               Danh sách phiếu thu - hóa đơn
             </div>
@@ -267,7 +271,7 @@ export default function TuitionPage() {
 
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-[#F8FAFC]">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">MÃ HD</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NỘI DUNG THU</th>
@@ -289,7 +293,7 @@ export default function TuitionPage() {
                   </tr>
                 ) : (
                   paymentHistory.map((payment) => (
-                    <tr key={payment.id} className="hover:bg-gray-50">
+                    <tr key={payment.id} className="hover:bg-[#F8FAFC]">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{payment.receiptCode}</td>
                       <td className="px-6 py-4 text-sm text-gray-900">{payment.description}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">-</td>
@@ -314,6 +318,6 @@ export default function TuitionPage() {
         </div>
 
       </div>
-    </div>
+    </PageLayout>
   );
 }
