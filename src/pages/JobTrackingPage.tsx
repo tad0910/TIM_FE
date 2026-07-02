@@ -15,6 +15,7 @@ import { useNotification } from "../hooks/useNotification";
 import NotificationPopup from "../components/NotificationPopup";
 import LoadingSpinner from "../components/tuition/LoadingSpinner";
 import { useNavigate } from "react-router-dom";
+import PageLayout from "../components/layout/PageLayout";
 
 
 type JobLeadWithMeta = JobLead & {
@@ -234,9 +235,12 @@ export default function JobTrackingPage(): JSX.Element {
     updateNote,
   } = useJobActivities(selectedLeadId, { autoLoad: Boolean(selectedLeadId) });
 
+  const displayLeads = leads;
+  const displayActivities = activities;
+
   const mappedLeads: JobLeadWithMeta[] = useMemo(
     () =>
-      leads.map((lead) => {
+      displayLeads.map((lead) => {
         const statusKey =
           normalizeStatusCode((lead.statusCode as string | null | undefined) ?? lead.status ?? null) ?? null;
         const statusDisplay = lead.statusLabel ?? lead.status ?? "";
@@ -251,13 +255,13 @@ export default function JobTrackingPage(): JSX.Element {
   );
 
   useEffect(() => {
-    if (!selectedLeadId && leads.length > 0) {
-      setSelectedLeadId(leads[0].id);
+    if (!selectedLeadId && displayLeads.length > 0) {
+      setSelectedLeadId(displayLeads[0].id);
     }
-    if (selectedLeadId && !leads.some((lead) => lead.id === selectedLeadId)) {
-      setSelectedLeadId(leads[0]?.id ?? null);
+    if (selectedLeadId && !displayLeads.some((lead) => lead.id === selectedLeadId)) {
+      setSelectedLeadId(displayLeads[0]?.id ?? null);
     }
-  }, [leads, selectedLeadId]);
+  }, [displayLeads, selectedLeadId]);
 
   useEffect(() => {
     if (!jobInterestEnabled) {
@@ -290,8 +294,8 @@ export default function JobTrackingPage(): JSX.Element {
   const noSearchResults = !loading && searchTerm.trim().length > 0 && filteredLeads.length === 0;
 
   const sortedActivities = useMemo(
-    () => [...activities].sort((a, b) => getActivityTimestamp(b) - getActivityTimestamp(a)),
-    [activities]
+    () => [...displayActivities].sort((a, b) => getActivityTimestamp(b) - getActivityTimestamp(a)),
+    [displayActivities]
   );
 
   const handleRefreshAll = async () => {
@@ -486,68 +490,60 @@ export default function JobTrackingPage(): JSX.Element {
     : `${filteredLeads.length} mục`;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 px-4 py-2 sm:px-6 lg:px-0">
-
-      <header className="space-y-4">
-        <div className="rounded-2xl border border-gray-200 bg-white px-6 py-6 shadow-sm">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">Student workspace</p>
-              <h1 className="mt-1 text-3xl font-semibold text-gray-900">Theo dõi đầu mối việc làm</h1>
-              <p className="mt-2 max-w-2xl text-sm text-gray-500">
-                Cập nhật tiến trình ứng tuyển, lưu trữ offer và chia sẻ nhật ký cho mentor. Ghi lại mọi hoạt động quan trọng để không bỏ lỡ cơ hội.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={() => void handleToggleJobInterest()}
-                className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold shadow-sm transition disabled:opacity-60 ${
-                  jobInterestEnabled
-                    ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                    : "bg-gray-900 text-white hover:bg-gray-800"
-                }`}
-                type="button"
-                disabled={jobSettingsLoading || jobSettingsUpdating}
-              >
-                {jobSettingsLoading ? "Đang kiểm tra..." : jobInterestEnabled ? "Đang tìm việc: ON" : "Đang tìm việc: OFF"}
-              </button>
-              <button
-                onClick={() => {
-                  if (!jobInterestEnabled) return;
-                  setCreateModalOpen(true);
-                }}
-                className={`inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-700 disabled:opacity-60`}
-                type="button"
-                disabled={!jobInterestEnabled}
-              >
-                <span className="text-lg">＋</span>
-                Thêm đầu mối
-              </button>
-            </div>
-          </div>
-          <div className="mt-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-3">
-            {headerStats.map((chip) => (
-              <div key={chip.label} className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">{chip.label}</p>
-                <p className="mt-2 text-2xl font-bold text-gray-900">{chip.value}</p>
-                <p className="text-xs text-gray-500">{chip.note}</p>
-              </div>
-            ))}
-          </div>
+    <PageLayout
+      title="Theo dõi đầu mối việc làm"
+      description="Cập nhật tiến trình ứng tuyển, lưu trữ offer và chia sẻ nhật ký cho mentor. Ghi lại mọi hoạt động quan trọng để không bỏ lỡ cơ hội."
+      headerRight={
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => void handleToggleJobInterest()}
+            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold shadow-sm transition disabled:opacity-60 ${
+              jobInterestEnabled
+                ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                : "bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm"
+            }`}
+            type="button"
+            disabled={jobSettingsLoading || jobSettingsUpdating}
+          >
+            {jobSettingsLoading ? "Đang kiểm tra..." : jobInterestEnabled ? "Đang tìm việc: ON" : "Đang tìm việc: OFF"}
+          </button>
+          <button
+            onClick={() => {
+              if (!jobInterestEnabled) return;
+              setCreateModalOpen(true);
+            }}
+            className={`inline-flex items-center gap-2 rounded-lg bg-[#EA580C] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#C2410C] disabled:opacity-60`}
+            type="button"
+            disabled={!jobInterestEnabled}
+          >
+            <span className="text-lg">＋</span>
+            Thêm đầu mối
+          </button>
         </div>
-
+      }
+    >
+      <div className="w-full space-y-6">
         {jobSettingsError && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {jobSettingsError}
           </div>
         )}
 
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
         )}
-      </header>
+
+        <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-3">
+          {headerStats.map((chip) => (
+            <div key={chip.label} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all hover:shadow-md">
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">{chip.label}</p>
+              <p className="mt-2 text-3xl font-bold text-[#1E3A8A]">{chip.value}</p>
+              <p className="mt-1 text-xs text-gray-500">{chip.note}</p>
+            </div>
+          ))}
+        </div>
 
       <div className="grid gap-6 lg:grid-cols-[360px,1fr]">
         <section className="space-y-4">
@@ -607,9 +603,9 @@ export default function JobTrackingPage(): JSX.Element {
                         <button
                           type="button"
                           onClick={() => setSelectedLeadId(lead.id)}
-                          className={`w-full rounded-xl border px-4 py-3 text-left transition-all ${
+                          className={`w-full rounded-2xl border px-4 py-4 text-left transition-all ${
                             isActive
-                              ? "border-indigo-200 bg-indigo-50 shadow"
+                              ? "border-[#1E3A8A] bg-blue-50/50 shadow-sm"
                               : "border-transparent bg-white hover:border-gray-200 hover:shadow-sm"
                           }`}
                         >
@@ -634,10 +630,10 @@ export default function JobTrackingPage(): JSX.Element {
                               </div>
                             </div>
                             <div className="flex flex-col items-end gap-2 text-xs">
-                              <span className={`rounded-full px-2 py-1 font-semibold uppercase tracking-wide ${
+                              <span className={`rounded-full px-2.5 py-1 font-semibold uppercase tracking-wider ${
                                 lead.isFromAdmin
-                                  ? "bg-indigo-50 text-indigo-600"
-                                  : "bg-emerald-50 text-emerald-600"
+                                  ? "bg-blue-100 text-[#1E3A8A]"
+                                  : "bg-emerald-100 text-emerald-700"
                               }`}>
                                 {lead.isFromAdmin ? "Giới thiệu" : "Tự tìm"}
                               </span>
@@ -993,6 +989,7 @@ export default function JobTrackingPage(): JSX.Element {
         </div>
       )}
     </div>
+    </PageLayout>
   );
 }
 
