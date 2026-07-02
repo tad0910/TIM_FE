@@ -12,10 +12,10 @@ import { queryKeys } from "../../../hooks/api/queryKeys";
 type Tab = "all" | "monthly";
 
 function getRankColor(rank: number) {
-  if (rank === 1) return "bg-yellow-400 text-white";
-  if (rank === 2) return "bg-green-500 text-white";
-  if (rank === 3) return "bg-orange-500 text-white";
-  return "bg-gray-200 text-gray-700";
+  if (rank === 1) return "bg-gradient-to-br from-[#FFD700] to-[#F59E0B] text-white shadow-sm ring-2 ring-yellow-100";
+  if (rank === 2) return "bg-gradient-to-br from-[#E5E7EB] to-[#9CA3AF] text-white shadow-sm ring-2 ring-gray-100";
+  if (rank === 3) return "bg-gradient-to-br from-[#FDBA74] to-[#EA580C] text-white shadow-sm ring-2 ring-orange-100";
+  return "bg-gray-100 text-gray-600";
 }
 
 export default function RankingCard() {
@@ -96,21 +96,19 @@ export default function RankingCard() {
   }, [items, expanded]);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <div className="flex flex-wrap items-center gap-2 mb-3">
-        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-50 text-blue-600">
-          <FontAwesomeIcon icon={["fas", "trophy"]} />
-        </span>
-        <h3 className="font-semibold">Bảng xếp hạng</h3>
-        <div className="flex justify-center w-full gap-1 text-xs">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+      <div className="flex flex-wrap items-center gap-3 mb-5">
+        <FontAwesomeIcon icon={["fas", "trophy"]} className="text-[#1E3A8A] w-4 h-4" />
+        <h3 className="font-bold text-gray-900 text-lg">Bảng xếp hạng</h3>
+        <div className="flex justify-center w-full gap-2 text-[13px] mt-1">
           {order.map((t) => (
             <button
               key={t}
               onClick={() => goTab(t)}
-              className={`px-3 py-1 rounded-full border transition-colors ${
+              className={`px-4 py-1.5 rounded-lg border transition-all duration-200 font-medium flex-1 ${
                 tab === t
-                  ? "bg-indigo-600 text-white border-indigo-600"
-                  : "bg-white text-gray-700 hover:bg-gray-50"
+                  ? "bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-sm"
+                  : "bg-white text-gray-600 hover:bg-gray-50 border-gray-200"
               }`}
             >
               {t === "all" ? "Tất cả" : "Tháng này"}
@@ -125,11 +123,11 @@ export default function RankingCard() {
         </div>
       )}
 
-      <ul className="divide-y">
+      <ul className="divide-y divide-gray-100">
         {loading &&
           items.length === 0 &&
           Array.from({ length: 3 }).map((_, idx) => (
-            <li key={`skeleton-${idx}`} className="py-2">
+            <li key={`skeleton-${idx}`} className="py-3">
               <div className="flex items-center justify-between animate-pulse">
                 <div className="flex items-center gap-3">
                   <span className="inline-flex w-7 h-7 rounded-full bg-gray-200" />
@@ -149,36 +147,36 @@ export default function RankingCard() {
         {visibleItems.map((it) => (
           <li
             key={`${it.userId}-${it.rank}`}
-            className="flex items-center justify-between py-2"
+            className="flex items-center justify-between py-3 hover:bg-gray-50 px-2 rounded-xl transition-colors -mx-2 group"
           >
             <div className="flex items-center gap-3 min-w-0">
               <span
-                className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-semibold ${getRankColor(
+                className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${getRankColor(
                   it.rank
                 )}`}
               >
                 {it.rank}
               </span>
               <div className="min-w-0">
-                <p className="truncate font-medium">{it.name}</p>
+                <p className="truncate font-semibold text-gray-800 group-hover:text-[#1E3A8A] transition-colors">{it.name}</p>
                 {it.className && (
-                  <p className="text-xs text-gray-500 truncate">
+                  <p className="text-xs text-gray-500 truncate mt-0.5">
                     {it.className}
                   </p>
                 )}
               </div>
             </div>
-            <span className="text-gray-600 whitespace-nowrap font-medium">
+            <span className="text-[#1E3A8A] whitespace-nowrap font-bold text-[15px]">
               {it.experienceScore.toLocaleString("vi-VN")} XP
             </span>
           </li>
         ))}
       </ul>
-      <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 mt-4 pt-2 border-t border-gray-100">
         {items.length > 5 && (
           <button
             type="button"
-            className="text-xs text-blue-500 hover:text-blue-600"
+            className="text-xs font-semibold text-[#1E3A8A] hover:text-blue-800 transition-colors"
             onClick={() => setExpanded((prev) => !prev)}
           >
             {expanded ? "Thu gọn top 5" : "Xem top 10"}
@@ -187,7 +185,7 @@ export default function RankingCard() {
         <button
           type="button"
           onClick={fetchRanking}
-          className="ml-auto text-xs text-blue-500 hover:text-blue-600"
+          className="ml-auto text-xs font-semibold text-gray-500 hover:text-gray-800 transition-colors"
           disabled={loading}
         >
           {loading ? "Đang tải..." : "Làm mới"}
