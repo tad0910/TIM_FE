@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
+import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import TableSkeleton from '../../../components/TableSkeleton';
 import NotificationPopup from '../../../components/NotificationPopup';
@@ -7,6 +7,7 @@ import GradeEntryModal from '../../../components/GradeEntryModal';
 import { useNotification } from '../../../hooks/useNotification';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { api } from '../../../services/api';
+import PageLayout from '../../../components/layout/PageLayout';
 // import { parseBackendDate } from '../../../utils/timeFormat';
 import {
   getClassModules,
@@ -819,11 +820,15 @@ export default function ScoresPage() {
   const renderStudentContent = () => {
     if (filteredScores.length === 0) {
       return (
-        <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-          <div className="text-gray-400 mb-2 text-4xl">📝</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có điểm số</h3>
-          <p className="text-gray-600">
-            Bạn chưa có điểm số nào trong các khóa học đã hoàn thành.
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+          <div className="mx-auto h-16 w-16 text-gray-300 mb-4">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Chưa có điểm số</h3>
+          <p className="text-gray-500">
+            Bạn chưa có điểm số nào trong các khóa học.
           </p>
         </div>
       );
@@ -859,12 +864,12 @@ export default function ScoresPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-[#F8FAFC]">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider sticky left-0 bg-[#F8FAFC] z-10">
                     Khóa học
                   </th>
                   {Array.from(allAssignmentNames).map((name) => (
@@ -876,18 +881,18 @@ export default function ScoresPage() {
                     </th>
                   ))}
                   {hasMidterm && (
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider min-w-[120px]">
                       Giữa kỳ
                     </th>
                   )}
                   {hasFinal && (
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider min-w-[120px]">
                       Cuối kỳ
                     </th>
                   )}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-gray-50">
                 {filteredScores.map((course) => {
                   const isHighlighted = 
                     highlightClassModuleId && 
@@ -898,8 +903,8 @@ export default function ScoresPage() {
                       key={course.id}
                       ref={isHighlighted ? highlightRef : null}
                       data-highlight-course={course.id}
-                      className={`hover:bg-gray-50 ${
-                        isHighlighted ? 'bg-indigo-50 border-l-4 border-indigo-400' : ''
+                      className={`hover:bg-blue-50/30 transition-colors ${
+                        isHighlighted ? 'bg-indigo-50 border-l-4 border-[#1E3A8A]' : ''
                       }`}
                     >
                       <td className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white z-10">
@@ -986,7 +991,7 @@ export default function ScoresPage() {
     }
 
     return (
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex flex-col gap-1">
           <h3 className="text-lg font-semibold text-gray-900">Danh sách module đã giao</h3>
           <p className="text-sm text-gray-600">
@@ -995,7 +1000,7 @@ export default function ScoresPage() {
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-[#F8FAFC]">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   MODULE
@@ -1017,7 +1022,7 @@ export default function ScoresPage() {
                       setTeacherSelectedModuleId(module.id);
                     }
                   }}
-                  className="hover:bg-gray-50 cursor-pointer"
+                  className="hover:bg-[#F8FAFC] cursor-pointer"
                 >
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     <div className="flex flex-col">
@@ -1078,25 +1083,25 @@ export default function ScoresPage() {
         </button>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow-sm p-4">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
             <div className="text-xs text-gray-500 mb-1">NGÀY TẠO MODULE</div>
             <div className="text-sm font-medium text-gray-900">
               {selectedModuleForDetail.createdAt ? formatEntryDate(selectedModuleForDetail.createdAt) : '—'}
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm p-4">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
             <div className="text-xs text-gray-500 mb-1">GIÁO VIÊN</div>
             <div className="text-sm font-medium text-gray-900">
               {teacherNames}
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm p-4">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
             <div className="text-xs text-gray-500 mb-1">NGÀY NHẬP GẦN NHẤT</div>
             <div className="text-sm font-medium text-gray-900">
               {moduleStats?.latestEntryDate ? formatEntryDate(moduleStats.latestEntryDate) : 'Chưa nhập'}
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm p-4">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
             <div className="text-xs text-gray-500 mb-1">SỐ HỌC VIÊN</div>
             <div className="text-sm font-medium text-gray-900">
               {moduleStats?.studentsWithScores ?? 0}
@@ -1104,7 +1109,7 @@ export default function ScoresPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-4">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Thông tin Module</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -1124,7 +1129,7 @@ export default function ScoresPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Danh sách các lần nhập/chỉnh sửa điểm</h3>
@@ -1141,7 +1146,7 @@ export default function ScoresPage() {
           ) : entryGroups.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-[#F8FAFC]">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       NGÀY NHẬP
@@ -1161,7 +1166,7 @@ export default function ScoresPage() {
                   {entryGroups.map((group) => (
                     <tr
                       key={`${group.moduleId}-${group.entryDate}`}
-                      className="hover:bg-gray-50 cursor-pointer"
+                      className="hover:bg-[#F8FAFC] cursor-pointer"
                       onClick={() => {
                         setSelectedEntryGroup(group);
                         setViewLevel('entryDetail');
@@ -1223,23 +1228,23 @@ export default function ScoresPage() {
         </button>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow-sm p-4">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
             <div className="text-xs text-gray-500 mb-1">ĐỢT</div>
             <div className="text-sm font-medium text-gray-900">
               {formatEntryDate(selectedEntryGroup.entryDate) || '—'}
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm p-4">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
             <div className="text-xs text-gray-500 mb-1">SỐ HỌC VIÊN</div>
             <div className="text-sm font-medium text-gray-900">{selectedEntryGroup.studentCount}</div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm p-4">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
             <div className="text-xs text-gray-500 mb-1">NGƯỜI NHẬP</div>
             <div className="text-sm font-medium text-gray-900">
               {selectedEntryGroup.enteredBy || teacherNames}
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm p-4">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
             <div className="text-xs text-gray-500 mb-1">NGÀY TẠO</div>
             <div className="text-sm font-medium text-gray-900">
               {selectedEntryGroup.createdAt
@@ -1254,7 +1259,7 @@ export default function ScoresPage() {
           {selectedModuleForDetail.className || `Lớp ${selectedModuleForDetail.classId}`}
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Chi tiết đợt nhập</h3>
@@ -1263,7 +1268,7 @@ export default function ScoresPage() {
           {selectedEntryGroup.students.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-[#F8FAFC]">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       TÊN HỌC VIÊN
@@ -1279,7 +1284,7 @@ export default function ScoresPage() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {selectedEntryGroup.students.map((student) => {
                     return (
-                      <tr key={student.studentId} className="hover:bg-gray-50">
+                      <tr key={student.studentId} className="hover:bg-[#F8FAFC]">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {student.studentName}
                         </td>
@@ -1312,7 +1317,7 @@ export default function ScoresPage() {
   const renderTeacherContent = () => {
     if (teacherClasses.length === 0) {
       return (
-        <div className="bg-white rounded-lg shadow-sm p-8 text-center text-gray-600">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-gray-600">
           Bạn chưa được phân công giảng dạy lớp nào. Vui lòng liên hệ quản trị viên để được cấp quyền.
         </div>
       );
@@ -1327,7 +1332,7 @@ export default function ScoresPage() {
 
     return (
       <div className="space-y-6">
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <div className="flex flex-col gap-4">
             <div className="flex gap-2">
               {!isAddMode ? (
@@ -1451,7 +1456,7 @@ export default function ScoresPage() {
         {!isAddMode ? (
           renderModuleList()
         ) : (
-          <div className="bg-white rounded-lg shadow-sm p-6 space-y-6">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
             <p className="text-xs text-gray-500">
               Mọi thao tác chỉnh sửa/nhập mới sẽ ghi nhận người chỉnh sửa là{' '}
               <span className="font-semibold text-gray-700">{teacherEditorDisplayName}</span>.
@@ -1490,9 +1495,9 @@ export default function ScoresPage() {
                 )}
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-[#F8FAFC]">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-[#F8FAFC] z-10">
                           Tên học viên
                         </th>
                         {teacherComponentColumns.map((component) => (
@@ -1546,7 +1551,7 @@ export default function ScoresPage() {
                             (student.entryDate ? new Date(student.entryDate).toISOString().slice(0, 10) : todayString());
                           
                           return (
-                            <tr key={student.studentId} className="hover:bg-gray-50">
+                            <tr key={student.studentId} className="hover:bg-[#F8FAFC]">
                               <td className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white z-10">
                                 <div className="text-sm font-medium text-gray-900">{student.studentName}</div>
                               </td>
@@ -1703,57 +1708,64 @@ export default function ScoresPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-          <p className="mt-4 text-gray-600">Đang tải điểm số...</p>
+      <PageLayout
+        title="Điểm số"
+        description="Đang tải dữ liệu điểm số..."
+      >
+        <div className="flex h-64 items-center justify-center rounded-2xl bg-white shadow-sm border border-gray-100">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-[#1E3A8A]"></div>
+            <p className="mt-4 text-gray-500 font-medium">Đang tải điểm số...</p>
+          </div>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-100">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="flex items-start">
-              <div className="text-red-600 mr-3">⚠️</div>
-              <div>
-                <h5 className="font-medium text-red-800">Lỗi</h5>
-                <p className="text-sm text-red-700 mt-1">{error}</p>
-                <button
-                  onClick={fetchScores}
-                  className="mt-3 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm font-medium"
-                >
-                  Thử lại
-                </button>
-              </div>
+      <PageLayout
+        title="Điểm số"
+        description="Đã xảy ra lỗi khi tải dữ liệu."
+      >
+        <div className="rounded-2xl bg-red-50 border border-red-100 p-6 shadow-sm">
+          <div className="flex items-start">
+            <div className="text-red-500 mt-0.5 mr-3">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div>
+              <h5 className="font-semibold text-red-800">Lỗi tải dữ liệu</h5>
+              <p className="text-sm text-red-600 mt-1">{error}</p>
+              <button
+                onClick={fetchScores}
+                className="mt-4 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-semibold"
+              >
+                Thử lại
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+    <PageLayout
+      title="Điểm số"
+      description={
+        isTeacher
+          ? 'Theo dõi và cập nhật điểm số cho các lớp học bạn phụ trách.'
+          : 'Theo dõi kết quả học tập và điểm số của bạn trong các khóa học.'
+      }
+    >
+      <div className="w-full space-y-6">
         <NotificationPopup notification={notification} onClose={hideNotification} />
-
-        <div className="mb-4">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Điểm số</h1>
-          <p className="text-gray-600">
-            {isTeacher
-              ? 'Theo dõi và cập nhật điểm số cho các lớp học bạn phụ trách.'
-              : 'Theo dõi kết quả học tập và điểm số của bạn trong các khóa học.'}
-          </p>
-        </div>
-
 
         {isTeacher ? renderTeacherContent() : renderStudentContent()}
       </div>
-    </div>
+    </PageLayout>
   );
 }
 
