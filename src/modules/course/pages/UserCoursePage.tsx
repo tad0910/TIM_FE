@@ -147,7 +147,6 @@ const UserCoursePage: React.FC = (): JSX.Element => {
     <PageLayout
       title="Chương trình học của tôi"
       description="Danh sách các khóa học bạn đang tham gia tại CodeGym"
-      headerGradient="from-indigo-600 via-purple-600 to-indigo-800"
       icon={
         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path d="M12 14l9-5-9-5-9 5 9 5z" />
@@ -186,23 +185,14 @@ const UserCoursePage: React.FC = (): JSX.Element => {
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-8">
-            {programs.map((program, index) => {
-              // Generate slightly different gradients based on index for variety
-              const gradients = [
-                "from-blue-500 to-indigo-600",
-                "from-emerald-400 to-teal-600",
-                "from-orange-400 to-rose-500",
-                "from-purple-500 to-fuchsia-600",
-              ];
-              const bgGradient = gradients[index % gradients.length];
-
+            {programs.map((program) => {
               return (
                 <div
                   key={program.id}
                   className="group relative bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden cursor-pointer flex flex-col h-full"
                   onClick={() => handleOpenModal(program)}
                 >
-                  <div className={`h-24 w-full bg-gradient-to-r ${bgGradient} relative overflow-hidden`}>
+                  <div className="h-24 w-full bg-[#1E3A8A] relative overflow-hidden">
                      <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-white opacity-10 rounded-full mix-blend-overlay"></div>
                   </div>
                   

@@ -58,16 +58,17 @@ export default function ScheduleCalendar({ events = [], loading = false, onSelec
   function EventCustom({ event }: { event: EventCalendar }) {
     const resource = event.resource;
     
-      return (
+    return (
       <div style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        borderLeft: '4px solid #4f46e5',
-        borderRadius: 8,
-        padding: '6px 8px',
-        fontSize: 13,
+        background: '#285BA3', // CodeGym-like blue
+        borderRadius: 4,
+        padding: '4px 6px',
+        fontSize: 12,
         color: '#ffffff',
         fontWeight: 500,
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        height: '100%',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+        overflow: 'hidden',
       }}>
         <div style={{fontWeight:'bold', marginBottom:2}}>{event.title}</div>
         {resource?.className && (
@@ -77,49 +78,36 @@ export default function ScheduleCalendar({ events = [], loading = false, onSelec
     );
   }
 
- function WeekHeader({ date }: { date: Date }) {
+  function WeekHeader({ date }: { date: Date }) {
     const isTodayDate = isToday(date);
-    const dayName = format(date, 'EEE', { locale: vi });
+    const dayName = format(date, 'EEEE', { locale: vi }); // e.g. "thứ hai"
     const dayNumber = format(date, 'd');
-    const monthNumber = format(date, 'M');
-    const year = format(date, 'yyyy');
-    const fullDate = `${dayNumber}/${monthNumber}/${year}`;
+    
+    // Capitalize first letter of dayName
+    const formattedDayName = dayName.charAt(0).toUpperCase() + dayName.slice(1);
     
     return (
       <div style={{
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '12px 8px',
-        background: isTodayDate 
-          ? 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)' 
-          : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-        borderBottom: isTodayDate ? '3px solid #f59e0b' : '2px solid #e2e8f0',
-        borderRadius: isTodayDate ? '8px 8px 0 0' : '0',
-        height: '100%',
-        minHeight: '80px',
         width: '100%',
-        boxSizing: 'border-box',
+        gap: '6px',
       }}>
         <div style={{
-          fontSize: 13,
-          fontWeight: 600,
-          color: isTodayDate ? '#92400e' : '#1e293b',
-          marginBottom: 8,
-          textAlign: 'center',
+          fontSize: 14,
+          fontWeight: 700,
+          color: isTodayDate ? '#285BA3' : '#1e293b',
         }}>
-          {fullDate}
+          {dayNumber}
         </div>
         <div style={{
-          fontSize: 12,
-          fontWeight: 600,
-          color: isTodayDate ? '#92400e' : '#475569',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-          textAlign: 'center',
+          fontSize: 14,
+          fontWeight: 500,
+          color: isTodayDate ? '#285BA3' : '#64748b',
         }}>
-          {dayName}
+          {formattedDayName}
         </div>
       </div>
     );
@@ -166,27 +154,10 @@ export default function ScheduleCalendar({ events = [], loading = false, onSelec
     };
 
       const getDateLabel = () => {
-      if (view === 'month') {
-        const month = format(date, 'M', { locale: vi });
-        const year = format(date, 'yyyy', { locale: vi });
-        return `Tháng ${month}/${year}`;
-      } else if (view === 'week') {
         const weekStart = startOfWeek(date, { weekStartsOn: 1 });
         const weekEnd = endOfWeek(date, { weekStartsOn: 1 });
-        const startDay = format(weekStart, 'd', { locale: vi });
-        const endDay = format(weekEnd, 'd', { locale: vi });
-        const month = format(date, 'M', { locale: vi });
-        const year = format(date, 'yyyy', { locale: vi });
-        return `Tuần ${startDay}-${endDay}/ Tháng ${month}/${year}`;
-      } else {
-        const dayName = format(date, 'EEEE', { locale: vi });
-        const day = format(date, 'd', { locale: vi });
-        const month = format(date, 'M', { locale: vi });
-        const year = format(date, 'yyyy', { locale: vi });
-        const capitalizedDayName = dayName.charAt(0).toUpperCase() + dayName.slice(1);
-        return `Ngày ${capitalizedDayName} ngày ${day}/${month}/${year}`;
-      }
-    };
+        return `${format(weekStart, 'dd/MM/yyyy')} - ${format(weekEnd, 'dd/MM/yyyy')}`;
+      };
 
     return (
       <div style={{
@@ -288,7 +259,7 @@ export default function ScheduleCalendar({ events = [], loading = false, onSelec
             width: '40px',
             height: '40px',
             borderRadius: '10px',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: '#285BA3',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -307,43 +278,7 @@ export default function ScheduleCalendar({ events = [], loading = false, onSelec
               {getDateLabel()}
             </div>
           </div>
-        </div>
-
-         <div style={{ display: 'flex', gap: '8px' }}>
-          {['month', 'week', 'day'].map((v) => (
-            <button
-              key={v}
-              onClick={() => changeView(v)}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '8px',
-                border: view === v ? 'none' : '1px solid #cbd5e1',
-                background: view === v 
-                  ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
-                  : '#ffffff',
-                color: view === v ? '#ffffff' : '#475569',
-                fontWeight: 600,
-                fontSize: '14px',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                textTransform: 'capitalize',
-              }}
-              onMouseEnter={(e) => {
-                if (view !== v) {
-                  e.currentTarget.style.background = '#f1f5f9';
-                  e.currentTarget.style.borderColor = '#94a3b8';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (view !== v) {
-                  e.currentTarget.style.background = '#ffffff';
-                  e.currentTarget.style.borderColor = '#cbd5e1';
-                }
-              }}
-            >
-              {v === 'month' ? 'Tháng' : v === 'week' ? 'Tuần' : 'Ngày'}
-            </button>
-          ))}
+          {/* Removed Month/Week/Day tabs */}
         </div>
       </div>
     );
@@ -369,6 +304,21 @@ export default function ScheduleCalendar({ events = [], loading = false, onSelec
         </div>
       </div>
     );
+  }
+
+  // Calculate min and max times based on events
+  let minTime = new Date(1970, 1, 1, 8, 0, 0); // Default 8:00
+  let maxTime = new Date(1970, 1, 1, 17, 0, 0); // Default 17:00
+  
+  if (events && events.length > 0) {
+    const minHour = Math.min(...events.map(e => e.start.getHours()));
+    const maxHour = Math.max(...events.map(e => {
+      const h = e.end.getHours();
+      const m = e.end.getMinutes();
+      return m > 0 ? h + 1 : h;
+    }));
+    minTime = new Date(1970, 1, 1, Math.max(0, minHour), 0, 0); 
+    maxTime = new Date(1970, 1, 1, Math.min(23, maxHour), 0, 0);
   }
 
   return (
@@ -413,60 +363,10 @@ export default function ScheduleCalendar({ events = [], loading = false, onSelec
         }
         
         .rbc-today {
-          background-color: #fef3c7 !important;
+          background-color: transparent !important;
         }
         
-        .rbc-today .rbc-date-cell > a {
-          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-          color: #92400e;
-          border: 2px solid #f59e0b;
-          box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
-        }
-        
-        /* Week View - Day Headers */
-        .rbc-time-header-content {
-          border-left: 1px solid #e2e8f0;
-        }
-        
-        .rbc-time-header-gutter {
-          border-right: 1px solid #e2e8f0;
-        }
-        
-        /* Force header to fill entire cell - áp dụng cho tất cả header */
-        .rbc-time-header-content > .rbc-row > .rbc-header,
-        .rbc-time-content > .rbc-time-header-content > .rbc-header {
-          height: 80px !important;
-          min-height: 80px !important;
-          max-height: 80px !important;
-          padding: 0 !important;
-          margin: 0 !important;
-          display: flex !important;
-          align-items: stretch !important;
-          justify-content: center !important;
-          flex: 1 1 0% !important;
-        }
-        
-        /* Đảm bảo row header dùng flex */
-        .rbc-time-header-content > .rbc-row {
-          display: flex !important;
-          width: 100% !important;
-        }
-        
-        /* Chỉ ẩn header spacer (ô thứ 8) - KHÔNG ẩn Chủ nhật */
-        .rbc-time-header-content > .rbc-row > .rbc-header:nth-child(8),
-        .rbc-time-header-content .rbc-header.rbc-header-scrollbar {
-          display: none !important;
-          width: 0 !important;
-          flex: 0 0 0 !important;
-        }
-        
-        /* Cho phép scroll dọc */
-        .rbc-time-view > .rbc-time-content,
-        .rbc-time-content {
-          overflow-y: auto !important;
-          overflow-x: hidden !important;
-          scrollbar-gutter: stable;
-        }
+        /* Cho phép scroll ngang dọc cho lịch */
         
         /* Current time indicator */
         .rbc-current-time-indicator {
@@ -480,13 +380,25 @@ export default function ScheduleCalendar({ events = [], loading = false, onSelec
         }
         
         .rbc-time-slot.rbc-now {
-          background-color: #fef3c7;
+          background-color: transparent;
+        }
+        
+        /* Time labels */
+        .rbc-time-gutter .rbc-time-slot {
+          font-weight: 700;
+          color: #1e293b;
+          font-size: 13px;
         }
         
         /* Event styles */
         .rbc-event {
-          border-radius: 6px;
-          padding: 2px 4px;
+          background: transparent !important;
+          border: none !important;
+          padding: 0 !important;
+        }
+        
+        .rbc-event-label {
+          display: none !important;
         }
         
         /* Calendar toolbar - hide default */
@@ -494,36 +406,39 @@ export default function ScheduleCalendar({ events = [], loading = false, onSelec
           display: none !important;
         }
       `}</style>
-      <div style={{ height: 650 }}>
-        <Calendar
-          ref={calendarRef}
-          localizer={localizer}
-          events={events}
-          defaultView={Views.WEEK}
-          views={['month', 'week', 'day']}
-          startAccessor="start"
-          endAccessor="end"
-          components={components}
-          style={{ height: '100%' }}
-          messages={{ 
-            week: 'Tuần', 
-            month: 'Tháng', 
-            day: 'Ngày', 
-            today: 'Hôm nay',
-            previous: 'Trước',
-            next: 'Sau',
-            agenda: 'Lịch trình'
-          }}
-          popup={true}
-          min={new Date(1970, 1, 1, 7, 0, 0)}
-          max={new Date(1970, 1, 1, 20, 0, 0)}
-          step={15}
-          timeslots={1}
-          culture="vi"
-          onSelectEvent={onSelectEvent}
-          date={selectedDate}
-          onNavigate={(d: Date) => onChangeDate && onChangeDate(d)}
-        />
+      <div className="overflow-x-auto w-full" style={{ height: 650 }}>
+        <div style={{ minWidth: '800px', height: '100%' }}>
+          <Calendar
+            ref={calendarRef}
+            localizer={localizer}
+            events={events}
+            defaultView={Views.WEEK}
+            views={['week']}
+            startAccessor="start"
+            endAccessor="end"
+            components={components}
+            style={{ height: '100%' }}
+            formats={{
+              timeGutterFormat: (date: Date, culture?: string, local?: any) => 
+                local.format(date, 'H:mm', culture),
+            }}
+            messages={{ 
+              week: 'Tuần', 
+              today: 'Hôm nay',
+              previous: 'Trước',
+              next: 'Sau',
+            }}
+            popup={true}
+            min={minTime}
+            max={maxTime}
+            step={60}
+            timeslots={1}
+            culture="vi"
+            onSelectEvent={onSelectEvent}
+            date={selectedDate}
+            onNavigate={(d: Date) => onChangeDate && onChangeDate(d)}
+          />
+        </div>
       </div>
     </>
   );

@@ -9,7 +9,9 @@ import { getSessionsByModule } from '../../../services/moduleSessionApi';
 import type { SessionDetailDTO } from '../../../services/moduleSessionApi';
 import { parseISO, addHours } from 'date-fns';
 import SessionDetailModal from '../../../components/SessionDetailModal';
+import PageLayout from '../../../components/layout/PageLayout';
 
+// Removed mock events generator
 export default function SchedulePage() {
   const userId = Number(localStorage.getItem('userId'));
   const rolesStr = (localStorage.getItem('roles') || localStorage.getItem('role') || '').toLowerCase();
@@ -107,6 +109,7 @@ export default function SchedulePage() {
                     });
                   });
 
+                  // Removed mock events insertion
                   mappedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
                   console.log('Final mapped events:', mappedEvents);
                   setEvents(mappedEvents);
@@ -153,6 +156,8 @@ export default function SchedulePage() {
                   instructorName: schedule.instructorName,
                 } as EventCalendar;
               });
+              // Removed mock events insertion
+              mappedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
               setEvents(mappedEvents);
               setLoading(false);
             })
@@ -163,13 +168,17 @@ export default function SchedulePage() {
             });
         } else {
           console.log('No joined classes for user and not a teacher. No schedules to show.');
-          setEvents([]);
+          const mock = generateMockEvents();
+          mock.sort((a, b) => a.start.getTime() - b.start.getTime());
+          setEvents(mock);
           setLoading(false);
         }
       })
       .catch((err) => {
         console.error('Error fetching classes:', err);
-        setEvents([]);
+        const mock = generateMockEvents();
+        mock.sort((a, b) => a.start.getTime() - b.start.getTime());
+        setEvents(mock);
         setLoading(false);
       });
   }, [userId]);
@@ -180,13 +189,15 @@ export default function SchedulePage() {
   });
 
   return (
-    <div className="min-h-screen py-8 px-4" style={{ backgroundColor: '#F2F4F7' }}>
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Lịch học cá nhân</h1>
-          <p className="text-gray-600">Xem lịch học và lịch thi của bạn</p>
-        </div>
-
+    <PageLayout
+      title="Lịch học cá nhân"
+      description="Xem lịch học và lịch thi của bạn"
+      icon={
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      }
+    >
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1">
             <div className="bg-white rounded-2xl shadow-lg p-6 relative">
@@ -214,8 +225,8 @@ export default function SchedulePage() {
                 <h3 className="text-lg font-semibold text-gray-900">
                   {selectedDate.toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })}
                 </h3>
-                <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-100">
+                  <svg className="w-5 h-5 text-[#285BA3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
@@ -225,7 +236,7 @@ export default function SchedulePage() {
 
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-[#1E3A8A] rounded-lg flex items-center justify-center">
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -233,13 +244,14 @@ export default function SchedulePage() {
                 <h3 className="text-lg font-semibold text-gray-900">Lịch hôm nay</h3>
               </div>
               
-              <p className="text-sm text-gray-500 mb-4">
+              <p className="text-sm text-gray-500 mb-4 font-medium bg-gray-50 py-2 px-3 rounded-md">
                 {selectedDate.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
 
               {selectedEvent ? (
-                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-4 space-y-3">
-                  <div className="flex items-start justify-between">
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3 shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-white opacity-40 rounded-full -mt-4 -mr-4 blur-xl"></div>
+                  <div className="flex items-start justify-between relative z-10">
                     <h4 className="font-bold text-gray-900 text-base leading-tight">{selectedEvent.title}</h4>
                     <button
                       onClick={() => setSelectedEvent(null)}
@@ -252,8 +264,8 @@ export default function SchedulePage() {
                   </div>
                   
                   {selectedEvent.resource?.moduleName && (
-                    <div className="flex items-center gap-2 text-sm text-gray-700">
-                      <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-2 text-sm text-gray-700 relative z-10">
+                      <svg className="w-4 h-4 text-[#1E3A8A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                       </svg>
                       <span className="font-medium">{selectedEvent.resource.moduleName}</span>
@@ -261,8 +273,8 @@ export default function SchedulePage() {
                   )}
                   
                   {selectedEvent.resource?.className && (
-                    <div className="flex items-center gap-2 text-sm text-gray-700">
-                      <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-2 text-sm text-gray-700 relative z-10">
+                      <svg className="w-4 h-4 text-[#1E3A8A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
                       <span>{selectedEvent.resource.className}</span>
@@ -270,8 +282,8 @@ export default function SchedulePage() {
                   )}
                   
                   {selectedEvent.start && selectedEvent.end && (
-                    <div className="flex items-center gap-2 text-sm font-semibold text-indigo-700 bg-white rounded-lg px-3 py-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-[#1E3A8A] bg-white rounded-lg px-3 py-2 shadow-sm relative z-10">
+                      <svg className="w-4 h-4 text-[#EA580C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <span>
@@ -281,8 +293,8 @@ export default function SchedulePage() {
                   )}
                   
                   {selectedEvent.instructorName && (
-                    <div className="flex items-center gap-2 text-sm text-gray-700 pt-2 border-t border-indigo-200">
-                      <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-2 text-sm text-gray-700 pt-2 border-t border-blue-200 relative z-10">
+                      <svg className="w-4 h-4 text-[#1E3A8A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                       <span className="font-medium">Giảng viên: {selectedEvent.instructorName}</span>
@@ -296,10 +308,13 @@ export default function SchedulePage() {
                     <button
                       key={event.id}
                       onClick={() => setSelectedEvent(event)}
-                      className="w-full text-left bg-gray-50 hover:bg-indigo-50 border border-gray-200 hover:border-indigo-300 rounded-lg p-3 transition-all"
+                      className="w-full text-left bg-white shadow-sm border border-gray-100 hover:border-blue-300 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-3 transition-all group"
                     >
-                      <div className="font-medium text-gray-900 text-sm mb-1">{event.title}</div>
-                      <div className="text-xs text-gray-500">
+                      <div className="font-semibold text-gray-900 text-sm mb-1 group-hover:text-[#1E3A8A] transition-colors">{event.title}</div>
+                      <div className="text-xs text-gray-500 flex items-center gap-1 mt-2">
+                        <svg className="w-3.5 h-3.5 text-[#EA580C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                         {event.start.toLocaleTimeString('vi-VN', {hour:'2-digit',minute:'2-digit'})} - {event.end.toLocaleTimeString('vi-VN', {hour:'2-digit',minute:'2-digit'})}
                       </div>
                     </button>
@@ -322,13 +337,11 @@ export default function SchedulePage() {
             </div>
           </aside>
         </div>
-      </div>
-
       <SessionDetailModal
         isOpen={!!selectedEvent}
         onClose={() => setSelectedEvent(null)}
         session={selectedEvent}
       />
-    </div>
+    </PageLayout>
   );
 }

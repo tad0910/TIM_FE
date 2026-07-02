@@ -78,37 +78,37 @@ export default function CalendarMini({ value, onChange }: { value: Date, onChang
         
         .calendar-mini-wrapper .react-calendar__tile:enabled:hover,
         .calendar-mini-wrapper .react-calendar__tile:enabled:focus {
-          background-color: #e0e7ff;
-          color: #4f46e5;
+          background-color: #f1f5f9;
+          color: #285BA3;
         }
         
         .calendar-mini-wrapper .react-calendar__tile--now {
-          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+          background: #f8fafc;
           font-weight: 700;
-          color: #92400e;
-          border: 2px solid #f59e0b;
-          box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+          color: #285BA3;
+          border: 1px solid #e2e8f0;
+          box-shadow: none;
         }
         
         .calendar-mini-wrapper .react-calendar__tile--now:enabled:hover,
         .calendar-mini-wrapper .react-calendar__tile--now:enabled:focus {
-          background: linear-gradient(135deg, #fde68a 0%, #fcd34d 100%);
-          color: #78350f;
-          border-color: #d97706;
-          box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);
-          transform: scale(1.05);
+          background: #e2e8f0;
+          color: #1e40af;
+          border-color: #cbd5e1;
+          box-shadow: none;
+          transform: none;
         }
         
         .calendar-mini-wrapper .react-calendar__tile--active {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
+          background: #285BA3 !important;
+          color: white !important;
           font-weight: 600;
         }
         
         .calendar-mini-wrapper .react-calendar__tile--active:enabled:hover,
         .calendar-mini-wrapper .react-calendar__tile--active:enabled:focus {
-          background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
-          color: white;
+          background: #1E3A8A !important;
+          color: white !important;
         }
         
         .calendar-mini-wrapper .react-calendar__tile--neighboringMonth {

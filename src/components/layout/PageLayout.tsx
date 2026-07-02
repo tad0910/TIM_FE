@@ -5,8 +5,7 @@ interface PageLayoutProps {
   description?: string;
   children: ReactNode;
   icon?: ReactNode;
-  headerGradient?: string;
-  contentMaxWidth?: string;
+  headerBg?: string;
 }
 
 const PageLayout: React.FC<PageLayoutProps> = ({
@@ -14,12 +13,12 @@ const PageLayout: React.FC<PageLayoutProps> = ({
   description,
   children,
   icon,
-  headerGradient = "from-blue-600 to-indigo-700",
+  headerBg = "bg-[#1E3A8A]", // Navy blue solid color by default
 }) => {
   return (
     <div className="min-h-screen bg-[#F8FAFC] p-6">
       {/* Header Background */}
-      <div className={`w-full rounded-2xl bg-gradient-to-r ${headerGradient} p-8 shadow-sm relative overflow-hidden mb-8`}>
+      <div className={`w-full rounded-2xl ${headerBg} p-8 shadow-sm relative overflow-hidden mb-8`}>
         {/* Decorative elements */}
         <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 rounded-full bg-white opacity-5 mix-blend-overlay"></div>
         <div className="absolute bottom-0 left-10 -mb-20 w-40 h-40 rounded-full bg-white opacity-5 mix-blend-overlay"></div>
