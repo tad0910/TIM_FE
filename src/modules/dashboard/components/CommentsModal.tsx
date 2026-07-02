@@ -215,7 +215,7 @@ export default function CommentsModal({
 
                 const reply: UiReply = {
                   id: String(r.id),
-                  authorName: r.username || undefined,
+                  authorName: r.fullName || r.username || undefined,
                   authorId: r.userId ? String(r.userId) : undefined,
                   authorAvatar: replyAvatar,
                   content: r.content,
@@ -298,7 +298,7 @@ export default function CommentsModal({
 
             return {
               id: String(c.id),
-              authorName: c.username || "Người dùng",
+              authorName: c.fullName || c.username || "Người dùng",
               authorId: String(c.userId || ""),
               authorAvatar,
               content: c.content,
@@ -336,7 +336,7 @@ export default function CommentsModal({
       });
       const added: UiComment = {
         id: String(c.id),
-        authorName: c.username || user?.username || "Bạn",
+        authorName: c.fullName || c.username || user?.username || "Bạn",
         authorAvatar: getLocalAvatarUrl(user?.id),
         authorId: user?.id,
         content: c.content,
@@ -364,6 +364,11 @@ export default function CommentsModal({
       if (onCommentAdded) {
         onCommentAdded();
       }
+      window.dispatchEvent(
+        new CustomEvent("comment-updated", {
+          detail: { targetType: "post", targetId: postId, action: "add" },
+        })
+      );
 
       showSuccess("Đăng bình luận thành công", "Bình luận của bạn đã được đăng.");
     } catch (e) {
@@ -390,7 +395,7 @@ export default function CommentsModal({
                 replies: [
                   {
                     id: String(r.id),
-                    authorName: r.username || user?.username || "Bạn",
+                    authorName: r.fullName || r.username || user?.username || "Bạn",
                     authorId: user?.id,
                     authorAvatar: getLocalAvatarUrl(user?.id),
                     content: r.content,
@@ -479,6 +484,11 @@ export default function CommentsModal({
       if (onCommentDeleted) {
         onCommentDeleted();
       }
+      window.dispatchEvent(
+        new CustomEvent("comment-updated", {
+          detail: { targetType: "post", targetId: postId, action: "delete" },
+        })
+      );
       showSuccess("Thành công", "Đã xóa bình luận");
     } catch (e) {
       console.error("Failed to delete comment", e);

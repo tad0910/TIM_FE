@@ -9,6 +9,7 @@ import CommentSection from './post/commentSection';
 import ReactionCounts from '../modules/dashboard/components/ReactionCounts';
 import { getCommentsByPost } from '../services/commentsApi';
 import type { Post } from '../types/post';
+import reactionsApi, { type EmotionType } from '../services/reactionsApi';
 
 interface PostDetailPanelProps {
   post: Post;
@@ -53,6 +54,26 @@ export default function PostDetailPanel({
     window.addEventListener('comment-updated', handler as EventListener);
     return () => window.removeEventListener('comment-updated', handler as EventListener);
   }, [post.id]);
+
+  const handleReactionSelect = async (emotion: EmotionType) => {
+    if (!user?.id) return;
+    try {
+      const userReaction = post.reactions?.find(r => String(r.userId) === String(user.id));
+      if (userReaction && userReaction.emotionType === emotion) {
+        await reactionsApi.deletePostReaction(post.id, { userId: user.id });
+      } else {
+        await reactionsApi.createOrUpdatePostReaction(post.id, { userId: user.id, emotionType: emotion });
+      }
+      
+      window.dispatchEvent(
+        new CustomEvent("reaction-updated", {
+          detail: { targetType: "post", targetId: post.id },
+        })
+      );
+    } catch (err) {
+      console.error('Failed to handle reaction:', err);
+    }
+  };
 
   const isOwner = user?.id === post.author?.id;
 
@@ -150,29 +171,16 @@ export default function PostDetailPanel({
           <PostContentTextOnly post={post} />
         </div>
 
-        <div className="px-2 lg:px-6 pb-2">
-          <div className="flex items-center justify-between">
-            <ReactionCounts
-              postId={post.id}
-              onOpenReactionsModal={onOpenReactionsModal}
-              className="px-0 py-0"
-            />
-            <button
-              onClick={onCommentClick}
-              className="flex items-center gap-2 text-gray-700 hover:text-gray-900"
-              aria-label="Xem tất cả bình luận"
-            >
-              <FontAwesomeIcon icon={["far", "comment"]} className="text-base" />
-              <span className="text-base font-medium">{commentCount}</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="border-t px-4 lg:px-6 py-3">
-          <PostAction
-            post={post}
-            onCommentClick={onCommentClick}
-            onShareClick={onShareClick}
+        <div className="px-4 lg:px-6 py-2 border-t border-b border-gray-100">
+          <ReactionCounts
+            postId={post.id}
+            onOpenReactionsModal={onOpenReactionsModal}
+            onOpenComments={onCommentClick}
+            onSelectReaction={handleReactionSelect}
+            reactionOfCurrentUser={post.reactions?.find(r => String(r.userId) === String(user?.id))?.emotionType as EmotionType | null}
+            commentCount={commentCount}
+            shareCount={0}
+            className="px-0 py-0"
           />
         </div>
 

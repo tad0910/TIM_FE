@@ -1,7 +1,10 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import reactionsApi, { type EmotionType } from "../../../services/reactionsApi";
 import { queryKeys } from "../../../hooks/api/queryKeys";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import "../../../fontawesome";
+import ReactionBar from "./ReactionBar";
 import likeIcon from "../../../assets/like.svg";
 import loveIcon from "../../../assets/love.svg";
 import hahaIcon from "../../../assets/haha.svg";
@@ -13,10 +16,25 @@ interface ReactionCountsProps {
   postId: string;
   reactions?: Array<{ emotionType: string }>;
   onOpenReactionsModal?: () => void;
+  onOpenComments?: () => void;
+  onSelectReaction?: (emotion: EmotionType) => Promise<void>;
+  reactionOfCurrentUser?: EmotionType | null;
   className?: string;
+  commentCount?: number;
+  shareCount?: number;
 }
 
-export default function ReactionCounts({ postId, reactions: reactionsFromProps, onOpenReactionsModal, className }: ReactionCountsProps) {
+export default function ReactionCounts({
+  postId,
+  reactions: reactionsFromProps,
+  onOpenReactionsModal,
+  onOpenComments,
+  onSelectReaction,
+  reactionOfCurrentUser = null,
+  className,
+  commentCount = 0,
+  shareCount = 0,
+}: ReactionCountsProps) {
   const queryClient = useQueryClient();
 
   // Tính counts từ props nếu có
@@ -94,6 +112,64 @@ export default function ReactionCounts({ postId, reactions: reactionsFromProps, 
 
   const totalReactions = Object.values(reactionCounts).reduce((sum, count) => sum + count, 0);
 
+  const likeButtonRef = useRef<HTMLButtonElement>(null);
+  const [showReactionBar, setShowReactionBar] = useState(false);
+  const [portalPos, setPortalPos] = useState<{ top: number; left: number } | null>(null);
+  const showReactionBarTimeoutRef = useRef<number | null>(null);
+  const hideReactionBarTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (showReactionBarTimeoutRef.current) clearTimeout(showReactionBarTimeoutRef.current);
+      if (hideReactionBarTimeoutRef.current) clearTimeout(hideReactionBarTimeoutRef.current);
+    };
+  }, []);
+
+  const updateReactionBarPosition = () => {
+    if (likeButtonRef.current) {
+      const rect = likeButtonRef.current.getBoundingClientRect();
+      setPortalPos({
+        top: rect.top - 48,
+        left: rect.left,
+      });
+    }
+  };
+
+  const showReactionBarHandler = () => {
+    if (hideReactionBarTimeoutRef.current) clearTimeout(hideReactionBarTimeoutRef.current);
+    showReactionBarTimeoutRef.current = window.setTimeout(() => {
+      updateReactionBarPosition();
+      setShowReactionBar(true);
+    }, 500);
+  };
+
+  const hideReactionBarHandler = () => {
+    if (showReactionBarTimeoutRef.current) clearTimeout(showReactionBarTimeoutRef.current);
+    hideReactionBarTimeoutRef.current = window.setTimeout(() => {
+      setShowReactionBar(false);
+    }, 200);
+  };
+
+  const handleReactionSelectInternal = async (emotion: EmotionType) => {
+    setShowReactionBar(false);
+    if (onSelectReaction) {
+      await onSelectReaction(emotion);
+    }
+  };
+
+  const getReactionColor = (emotion: EmotionType) => {
+    switch (emotion) {
+      case "like": return "#1877f2";
+      case "love": return "#f33e58";
+      case "haha":
+      case "wow":
+      case "sad":
+      case "angry":
+        return "#eab308";
+      default: return undefined;
+    }
+  };
+
   if (loading) {
     return (
       <div className={`px-4 py-2 ${className}`}>
@@ -113,39 +189,117 @@ export default function ReactionCounts({ postId, reactions: reactionsFromProps, 
     );
   }
 
-  if (totalReactions === 0) {
+  if (totalReactions === 0 && commentCount === 0 && shareCount === 0) {
     return null;
   }
 
+  // Get active emotions sorted by count descending
+  const activeEmotions = Object.entries(reactionCounts)
+    .filter(([_, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1])
+    .map(([emotion]) => emotion as EmotionType);
+
   return (
-    <div className={`px-4 py-2 ${className}`}>
-      <div className="flex items-center gap-2 text-mx text-gray-600">
-        <div className="flex items-center gap-1">
-          {Object.entries(reactionCounts).map(([emotion, count]) => {
-            if (count === 0) return null;
-            return (
-              <img
-                key={emotion}
-                src={reactionIcons[emotion as EmotionType]}
-                alt={emotion}
-                className="w-5 h-5"
-                title={`${count} ${emotion}`}
-              />
-            );
-          })}
-        </div>
-        {onOpenReactionsModal ? (
+    <div className={`px-4 py-2 ${className} flex items-center justify-between w-full`}>
+      {/* Left side: Outline counts */}
+      <div className="flex items-center gap-5 text-[14px] text-gray-500 font-medium">
+        <div
+          className="relative"
+          onMouseEnter={showReactionBarHandler}
+          onMouseLeave={hideReactionBarHandler}
+        >
           <button
-            onClick={onOpenReactionsModal}
-            className="text-gray-700 hover:text-blue-700 font-medium"
-            aria-label="Xem tất cả cảm xúc"
+            ref={likeButtonRef}
+            onClick={async () => {
+              if (onSelectReaction) {
+                const target = reactionOfCurrentUser ? reactionOfCurrentUser : "like";
+                await onSelectReaction(target);
+              }
+            }}
+            className={`flex items-center gap-1.5 transition-colors ${
+              reactionOfCurrentUser ? "font-semibold" : "hover:text-blue-600 text-gray-500"
+            }`}
+            style={{
+              color: reactionOfCurrentUser ? getReactionColor(reactionOfCurrentUser) : undefined
+            }}
+            title="Thích"
           >
-            {totalReactions}
+            {reactionOfCurrentUser ? (
+              <img
+                src={reactionIcons[reactionOfCurrentUser]}
+                alt={reactionOfCurrentUser}
+                className="w-[18px] h-[18px] object-contain scale-110"
+              />
+            ) : (
+              <FontAwesomeIcon icon={["far", "thumbs-up"]} className="text-base" />
+            )}
+            <span>{totalReactions}</span>
           </button>
-        ) : (
-          <span className="text-gray-700 font-medium">{totalReactions}</span>
-        )}
+
+          {showReactionBar &&
+            portalPos &&
+            require("react-dom").createPortal(
+              <div
+                style={{
+                  position: "fixed",
+                  top: portalPos.top,
+                  left: portalPos.left,
+                  zIndex: 9999,
+                }}
+                onMouseEnter={() => {
+                  if (hideReactionBarTimeoutRef.current) {
+                    clearTimeout(hideReactionBarTimeoutRef.current);
+                    hideReactionBarTimeoutRef.current = null;
+                  }
+                  setShowReactionBar(true);
+                }}
+                onMouseLeave={hideReactionBarHandler}
+              >
+                <ReactionBar onSelect={handleReactionSelectInternal} />
+              </div>,
+              document.body
+            )}
+        </div>
+
+        <button
+          onClick={onOpenComments}
+          className="flex items-center gap-1.5 hover:text-blue-600 text-gray-500 transition-colors"
+          title="Bình luận"
+        >
+          <FontAwesomeIcon icon={["far", "comment"]} className="text-base" />
+          <span>{commentCount}</span>
+        </button>
+
+        <div
+          className="flex items-center gap-1.5 hover:text-blue-600 text-gray-500 transition-colors cursor-pointer"
+          title="Chia sẻ"
+        >
+          <FontAwesomeIcon icon={["far", "share-from-square"]} className="text-base" />
+          <span>{shareCount}</span>
+        </div>
       </div>
+
+      {/* Right side: Stacked overlapping bubbles */}
+      {totalReactions > 0 && (
+        <div 
+          onClick={onOpenReactionsModal}
+          className="flex items-center -space-x-1 hover:opacity-85 transition-opacity cursor-pointer"
+          title="Xem chi tiết cảm xúc"
+        >
+          {activeEmotions.slice(0, 3).map((emotion) => (
+            <div 
+              key={emotion} 
+              className="w-[18px] h-[18px] rounded-full border border-white flex items-center justify-center bg-white shadow-sm overflow-hidden"
+            >
+              <img
+                src={reactionIcons[emotion]}
+                alt={emotion}
+                className="w-full h-full object-cover scale-110"
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

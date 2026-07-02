@@ -45,6 +45,7 @@ export interface Comment {
   id: string;
   userId: string;
   username: string;
+  fullName?: string;
   content: string;
   emotion?: string | null;
   createdAt: string;
@@ -160,6 +161,7 @@ export interface CommentResponse {
   id: string;
   userId: string;
   username: string;
+  fullName?: string;
   userAvatar?: string;
   content: string;
   emotion?: string | null;
@@ -172,6 +174,7 @@ export interface ReplyCommentResponse {
   id: string;
   userId: string;
   username: string;
+  fullName?: string;
   userAvatar?: string;
   content: string;
   emotion?: string | null;

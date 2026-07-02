@@ -27,11 +27,13 @@ export default function PostDetailModal({
   const [detailedPost, setDetailedPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+
   const [showReactionBar, setShowReactionBar] = useState(false);
   const showReactionBarTimeoutRef = useRef<number | null>(null);
   const hideReactionBarTimeoutRef = useRef<number | null>(null);
   const [showComments, setShowComments] = useState(false);
-  const queryClient = useQueryClient();
+  const [commentCount, setCommentCount] = useState(0);
 
   useEffect(() => {
     return () => {
@@ -39,6 +41,21 @@ export default function PostDetailModal({
       if (hideReactionBarTimeoutRef.current) clearTimeout(hideReactionBarTimeoutRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { targetType: 'post'; targetId: string; action?: 'add' | 'delete' };
+      if (detail && detail.targetType === 'post' && detail.targetId === post.id) {
+        if (detail.action === 'delete') {
+          setCommentCount((c) => Math.max(0, c - 1));
+        } else {
+          setCommentCount((c) => c + 1);
+        }
+      }
+    };
+    window.addEventListener('comment-updated', handler as EventListener);
+    return () => window.removeEventListener('comment-updated', handler as EventListener);
+  }, [post.id]);
 
   const showReactionBarHandler = () => {
     if (hideReactionBarTimeoutRef.current) clearTimeout(hideReactionBarTimeoutRef.current);
@@ -54,9 +71,11 @@ export default function PostDetailModal({
     }, 250);
   };
 
-  const loadDetailedPost = useCallback(async () => {
+  const loadDetailedPost = useCallback(async (isSilent = false) => {
     try {
-      setLoading(true);
+      if (!isSilent) {
+        setLoading(true);
+      }
       setError(null);
       console.log('PostDetailModal: Loading post with ID:', post.id, 'for user:', user!.id);
       const postData = await getPostById(post.id);
@@ -67,11 +86,14 @@ export default function PostDetailModal({
         name: postData.author?.name
       });
       setDetailedPost(postData);
+      setCommentCount(postData.totalComments || postData.comments?.length || 0);
     } catch (err) {
       console.error('Error loading detailed post:', err);
       setError('Không thể tải thông tin chi tiết bài viết');
     } finally {
-      setLoading(false);
+      if (!isSilent) {
+        setLoading(false);
+      }
     }
   }, [post.id, user]);
 
@@ -87,7 +109,7 @@ export default function PostDetailModal({
     try {
       // Check if user already reacted by getting all reactions and finding user's reaction
       const reactions = await reactionsApi.getReactionsByPostId(detailedPost.id);
-      const userReaction = reactions.find(r => r.userId === user.id);
+      const userReaction = reactions.find(r => String(r.userId) === String(user.id));
       
       if (userReaction && userReaction.emotionType === emotion) {
         // Remove reaction
@@ -97,8 +119,8 @@ export default function PostDetailModal({
         await reactionsApi.createOrUpdatePostReaction(detailedPost.id, { userId: user.id, emotionType: emotion });
       }
       
-      // Reload post data to get updated reaction counts
-      await loadDetailedPost();
+      // Reload post data silently to get updated reaction counts
+      await loadDetailedPost(true);
       
       // Sync with main feed
       queryClient.invalidateQueries({ queryKey: ["posts"] });
@@ -314,53 +336,19 @@ export default function PostDetailModal({
                   </div>
                 )}
 
+
+
                 {/* Reactions */}
-                <div className="py-2 border-b border-gray-200">
+                <div className="py-2 border-t border-b border-gray-200 mt-4">
                   <ReactionCounts
                     postId={detailedPost.id}
                     reactions={detailedPost.reactions}
                     onOpenReactionsModal={() => {}}
+                    onSelectReaction={handleReactionSelect}
+                    reactionOfCurrentUser={getCurrentUserReaction() as EmotionType | null}
+                    commentCount={commentCount}
+                    shareCount={0}
                   />
-                </div>
-
-                {/* Footer: Actions */}
-                <div className="flex items-center justify-between py-1 border-b border-gray-200 px-2">
-                  <div
-                    className="flex-1 relative"
-                    onMouseEnter={showReactionBarHandler}
-                    onMouseLeave={hideReactionBarHandler}
-                  >
-                    <button
-                      onClick={async () => {
-                        const currentUserReactionEmotion = getCurrentUserReaction();
-                        const targetEmotion = currentUserReactionEmotion || "like";
-                        await handleReactionSelect(targetEmotion as EmotionType);
-                      }}
-                      className={`w-full flex items-center justify-center space-x-2 py-2 rounded-lg transition-colors font-semibold text-[15px] ${
-                        getCurrentUserReaction()
-                          ? 'text-blue-600 hover:bg-blue-50'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      <FontAwesomeIcon icon={["far", "thumbs-up"]} className="text-lg" />
-                      <span>{getReactionLabel(getCurrentUserReaction())}</span>
-                    </button>
-                    {showReactionBar && (
-                      <div className="absolute bottom-full left-0 mb-1 z-50">
-                        <ReactionBar onSelect={handleReactionSelect} />
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    className="flex-1 flex items-center justify-center space-x-2 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-semibold text-[15px]"
-                  >
-                    <FontAwesomeIcon icon={["far", "comment"]} className="text-lg" />
-                    <span>Bình luận</span>
-                  </button>
-                  <button className="flex-1 flex items-center justify-center space-x-2 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-semibold text-[15px]">
-                    <FontAwesomeIcon icon={["far", "share-from-square"]} className="text-lg" />
-                    <span>Chia sẻ</span>
-                  </button>
                 </div>
 
                 {/* Comments Section */}

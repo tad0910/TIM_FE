@@ -9,7 +9,7 @@ import UserAvatarWithModal from '../../../components/UserAvatarWithModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import '../../../fontawesome';
 import ReactionBar from '../components/ReactionBar';
-import { type EmotionType } from '../../../services/reactionsApi';
+import reactionsApi, { type EmotionType } from '../../../services/reactionsApi';
 import ReactionCounts from '../components/ReactionCounts';
 import CommentsModal from '../components/CommentsModal';
 import { parseBackendDate } from '../../../utils/timeFormat';
@@ -54,7 +54,21 @@ export default function PostDetailPage() {
     if (!user?.id || !post) return;
     
     try {
-      console.log('Selected emotion:', emotion, 'for post:', post.id);
+      const userReaction = post.reactions?.find(r => String(r.userId) === String(user.id));
+      if (userReaction && userReaction.emotionType === emotion) {
+        await reactionsApi.deletePostReaction(post.id, { userId: user.id });
+      } else {
+        await reactionsApi.createOrUpdatePostReaction(post.id, { userId: user.id, emotionType: emotion });
+      }
+      
+      const updatedPost = await getPostById(post.id);
+      setPost(updatedPost);
+
+      window.dispatchEvent(
+        new CustomEvent("reaction-updated", {
+          detail: { targetType: "post", targetId: post.id },
+        })
+      );
     } catch (err) {
       console.error('Failed to handle reaction:', err);
     }
@@ -286,63 +300,36 @@ export default function PostDetailPage() {
                 })}
               </div>
             </div>
-          )}
-
-          {/* Reactions */}
-          <div className="mb-4">
+          )}          {/* Reactions */}
+          <div className="px-6 py-3 border-t border-gray-100">
             <ReactionCounts
               postId={post!.id}
               reactions={post!.reactions}
-              onOpenReactionsModal={() => setShowReactionBar(!showReactionBar)}
+              onOpenReactionsModal={() => setShowReactionBar?.(true)}
+              onOpenComments={() => setShowComments(true)}
+              onSelectReaction={handleReactionSelect}
+              reactionOfCurrentUser={post.reactions?.find(r => String(r.userId) === String(user?.id))?.emotionType as EmotionType | null}
+              commentCount={post.comments?.length || 0}
+              shareCount={0}
+              className="px-0 py-0"
             />
-            {showReactionBar && (
-              <div className="mt-2">
-                <ReactionBar onSelect={handleReactionSelect} />
-              </div>
-            )}
           </div>
 
-        {/* Comments Preview */}
-        <div className="p-6 border-t">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="font-medium text-gray-900">
-              Bình luận ({post.comments?.length || 0})
-            </h4>
-            {post.comments && post.comments.length > 0 && (
-              <button
-                onClick={() => setShowComments(true)}
-                className="text-blue-600 hover:underline text-sm"
-              >
-                Xem tất cả
-              </button>
-            )}
-          </div>
-
-          {/* Action Buttons */}
-          <div className="p-4 border-t flex justify-between text-sm text-gray-600">
-            <button
-              onClick={() => setShowReactionBar(!showReactionBar)}
-              className="hover:text-blue-600 transition-colors"
-            >
-              <FontAwesomeIcon icon={['far', 'thumbs-up']} className="mr-1" />
-              Like
-            </button>
-            <button
-              onClick={() => setShowComments(true)}
-              className="hover:text-blue-600 transition-colors"
-            >
-              <FontAwesomeIcon icon={['far', 'comment']} className="mr-1" />
-              Comment
-            </button>
-            <button
-              onClick={() => navigator.clipboard?.writeText?.(window.location.href)}
-              className="hover:text-blue-600 transition-colors"
-            >
-              <FontAwesomeIcon icon={['far', 'share-from-square']} className="mr-1" />
-              Share
-            </button>
-          </div>
-
+          {/* Comments Preview */}
+          <div className="p-6 border-t border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="font-medium text-gray-900">
+                Bình luận ({post.comments?.length || 0})
+              </h4>
+              {post.comments && post.comments.length > 0 && (
+                <button
+                  onClick={() => setShowComments(true)}
+                  className="text-blue-600 hover:underline text-sm"
+                >
+                  Xem tất cả
+                </button>
+              )}
+            </div>
           {/* Recent Comments */}
           <div className="space-y-3 max-h-64 overflow-y-auto">
             {(Array.isArray(post?.comments) ? (post!.comments as any[]) : [])

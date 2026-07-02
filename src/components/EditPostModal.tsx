@@ -37,7 +37,11 @@ export default function EditPostModal({ post, isOpen, onClose, onSuccess }: Edit
   const { notification, hideNotification, showWarning, showApiError } = useNotification();
 
   const getDisplayName = () => {
-    return user?.username || 'Người dùng';
+    return post.author?.name || post.fullName || user?.username || 'Người dùng';
+  };
+
+  const getAvatarUrl = () => {
+    return post.author?.avatar || post.userAvatar || undefined;
   };
 
   useEffect(() => {
@@ -279,9 +283,10 @@ export default function EditPostModal({ post, isOpen, onClose, onSuccess }: Edit
             {/* User Info & Privacy */}
             <div className="flex items-center gap-2 mb-4">
               <UserAvatar
-                userId={user?.id}
+                userId={post.author?.id || user?.id}
                 authorName={getDisplayName()}
                 name={getDisplayName()}
+                src={getAvatarUrl()}
                 className="w-10 h-10 rounded-full object-cover"
               />
               <div>

@@ -32,8 +32,11 @@ export default function PhotoViewerModal({
   const [showReactionBar, setShowReactionBar] = useState(false);
   const showReactionBarTimeoutRef = useRef<number | null>(null);
   const hideReactionBarTimeoutRef = useRef<number | null>(null);
+
+
   const [currentMediaIndex, setCurrentMediaIndex] = useState(initialMediaIndex);
   const queryClient = useQueryClient();
+  const [commentCount, setCommentCount] = useState(0);
 
   useEffect(() => {
     return () => {
@@ -41,6 +44,21 @@ export default function PhotoViewerModal({
       if (hideReactionBarTimeoutRef.current) clearTimeout(hideReactionBarTimeoutRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { targetType: 'post'; targetId: string; action?: 'add' | 'delete' };
+      if (detail && detail.targetType === 'post' && detail.targetId === post.id) {
+        if (detail.action === 'delete') {
+          setCommentCount((c) => Math.max(0, c - 1));
+        } else {
+          setCommentCount((c) => c + 1);
+        }
+      }
+    };
+    window.addEventListener('comment-updated', handler as EventListener);
+    return () => window.removeEventListener('comment-updated', handler as EventListener);
+  }, [post.id]);
 
   const showReactionBarHandler = () => {
     if (hideReactionBarTimeoutRef.current) clearTimeout(hideReactionBarTimeoutRef.current);
@@ -56,17 +74,22 @@ export default function PhotoViewerModal({
     }, 250);
   };
 
-  const loadDetailedPost = useCallback(async () => {
+  const loadDetailedPost = useCallback(async (isSilent = false) => {
     try {
-      setLoading(true);
+      if (!isSilent) {
+        setLoading(true);
+      }
       setError(null);
       const postData = await getPostById(post.id);
       setDetailedPost(postData);
+      setCommentCount(postData.totalComments || postData.comments?.length || 0);
     } catch (err) {
       console.error('Error loading detailed post:', err);
       setError('Không thể tải thông tin chi tiết bài viết');
     } finally {
-      setLoading(false);
+      if (!isSilent) {
+        setLoading(false);
+      }
     }
   }, [post.id]);
 
@@ -82,7 +105,7 @@ export default function PhotoViewerModal({
 
     try {
       const reactions = await reactionsApi.getReactionsByPostId(detailedPost.id);
-      const userReaction = reactions.find(r => r.userId === user.id);
+      const userReaction = reactions.find(r => String(r.userId) === String(user.id));
       
       if (userReaction && userReaction.emotionType === emotion) {
         await reactionsApi.deletePostReaction(detailedPost.id, { userId: user.id });
@@ -90,7 +113,7 @@ export default function PhotoViewerModal({
         await reactionsApi.createOrUpdatePostReaction(detailedPost.id, { userId: user.id, emotionType: emotion });
       }
       
-      await loadDetailedPost();
+      await loadDetailedPost(true);
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       window.dispatchEvent(
         new CustomEvent("reaction-updated", {
@@ -247,55 +270,21 @@ export default function PhotoViewerModal({
                   {detailedPost.content}
                 </div>
 
+
                 {/* Reactions Count */}
                 <div className="px-4 py-2 border-b border-gray-200">
                   <ReactionCounts
                     postId={detailedPost.id}
                     reactions={detailedPost.reactions}
                     onOpenReactionsModal={() => {}}
+                    onSelectReaction={handleReactionSelect}
+                    reactionOfCurrentUser={getCurrentUserReaction() as EmotionType | null}
+                    commentCount={commentCount}
+                    shareCount={0}
                     className="px-0 py-0"
                   />
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex items-center justify-between px-2 py-1 border-b border-gray-200 relative">
-                  <div
-                    className="flex-1 relative"
-                    onMouseEnter={showReactionBarHandler}
-                    onMouseLeave={hideReactionBarHandler}
-                  >
-                    <button
-                      onClick={async () => {
-                        const currentUserReaction = detailedPost.reactions?.find(
-                          (r) => String(r.userId) === String(user?.id)
-                        );
-                        const targetEmotion = currentUserReaction?.emotionType || "like";
-                        await handleReactionSelect(targetEmotion as EmotionType);
-                      }}
-                      className={`w-full flex items-center justify-center space-x-2 py-2 rounded-lg transition-colors font-semibold text-[15px] ${
-                        getCurrentUserReaction()
-                          ? 'text-blue-600 hover:bg-blue-50'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      <FontAwesomeIcon icon={["far", "thumbs-up"]} className="text-lg" />
-                      <span>{getReactionLabel(getCurrentUserReaction())}</span>
-                    </button>
-                    {showReactionBar && (
-                      <div className="absolute bottom-full left-0 mb-1 z-50">
-                        <ReactionBar onSelect={handleReactionSelect} />
-                      </div>
-                    )}
-                  </div>
-                  <button className="flex-1 flex items-center justify-center space-x-2 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-semibold text-[15px]">
-                    <FontAwesomeIcon icon={["far", "comment"]} className="text-lg" />
-                    <span>Bình luận</span>
-                  </button>
-                  <button className="flex-1 flex items-center justify-center space-x-2 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-semibold text-[15px]">
-                    <FontAwesomeIcon icon={["far", "share-from-square"]} className="text-lg" />
-                    <span>Chia sẻ</span>
-                  </button>
-                </div>
                 {/* Comments Section (Takes remaining space and scrolls comments list) */}
                 <CommentsModal
                   isOpen={true}

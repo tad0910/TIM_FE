@@ -572,115 +572,18 @@ export default function PostCard({
           </div>
         )}
         {/* Reactions + Comment total row */}
-        <div className="px-4 py-2">
-          <div className="flex items-center justify-between">
-            <ReactionCounts
-              postId={post.id}
-              reactions={localReactions}
-              onOpenReactionsModal={() => setShowReactionsModal(true)}
-              className="px-0 py-0"
-            />
-            <button
-              onClick={() => setShowComments(true)}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
-              aria-label="Xem tất cả bình luận"
-            >
-              <FontAwesomeIcon icon={["far", "comment"]} className="text-base" />
-              <span className="text-sm font-medium">{commentCount}</span>
-            </button>
-          </div>
-        </div>
-        <div className="p-4 flex justify-between text-sm text-gray-600">
-          <div
-            className="relative"
-            onMouseEnter={() => {
-              if (hideReactionBarTimeoutRef.current) {
-                clearTimeout(hideReactionBarTimeoutRef.current);
-                hideReactionBarTimeoutRef.current = null;
-              }
-              // Add a hover delay for feed reaction bar too
-              showReactionBarTimeoutRef.current = window.setTimeout(() => {
-                updateReactionBarPosition();
-                setShowReactionBar(true);
-              }, 500);
-            }}
-            onMouseLeave={() => {
-              if (showReactionBarTimeoutRef.current) {
-                clearTimeout(showReactionBarTimeoutRef.current);
-              }
-              hideReactionBarTimeoutRef.current = window.setTimeout(() => {
-                setShowReactionBar(false);
-                hideReactionBarTimeoutRef.current = null;
-              }, 500);
-            }}
-          >
-            <button
-              ref={likeButtonRef}
-              onClick={async () => {
-                await handleReactionSelect("like");
-              }}
-              className={`transition-colors flex items-center gap-1 ${
-                reactionOfCurrentUser ? "font-semibold" : "hover:text-blue-600"
-              }`}
-            >
-              {reactionOfCurrentUser ? (
-                <img
-                  src={reactionIcons[reactionOfCurrentUser]}
-                  alt={reactionOfCurrentUser}
-                  width={20}
-                  height={20}
-                />
-              ) : (
-                <FontAwesomeIcon icon={["far", "thumbs-up"]} />
-              )}
-
-              {reactionOfCurrentUser
-                ? reactionOfCurrentUser?.charAt(0).toUpperCase() +
-                  reactionOfCurrentUser?.slice(1)
-                : "Like"}
-            </button>
-
-            {showReactionBar &&
-              portalPos &&
-              createPortal(
-                <div
-                  style={{
-                    position: "fixed",
-                    top: portalPos.top,
-                    left: portalPos.left,
-                    zIndex: 9999,
-                  }}
-                  onMouseEnter={() => {
-                    if (hideReactionBarTimeoutRef.current) {
-                      clearTimeout(hideReactionBarTimeoutRef.current);
-                      hideReactionBarTimeoutRef.current = null;
-                    }
-                    setShowReactionBar(true);
-                  }}
-                  onMouseLeave={() => {
-                    hideReactionBarTimeoutRef.current = window.setTimeout(
-                      () => {
-                        setShowReactionBar(false);
-                        hideReactionBarTimeoutRef.current = null;
-                      },
-                      200
-                    );
-                  }}
-                >
-                  <ReactionBar onSelect={handleReactionSelect} />
-                </div>,
-                document.body
-              )}
-          </div>
-          <button
-            onClick={() => setShowComments(true)}
-            className="hover:text-blue-600 transition-colors"
-          >
-            <FontAwesomeIcon icon={["far", "comment"]} /> Bình luận
-          </button>
-          <button className="hover:text-blue-600 transition-colors">
-            <FontAwesomeIcon icon={["far", "share-from-square"]} /> Chia sẻ
-          </button>
+        <div className="px-4 py-2 border-t border-gray-100">
+          <ReactionCounts
+            postId={post.id}
+            reactions={localReactions}
+            onOpenReactionsModal={() => setShowReactionsModal(true)}
+            onOpenComments={() => setShowComments(true)}
+            onSelectReaction={handleReactionSelect}
+            reactionOfCurrentUser={reactionOfCurrentUser}
+            commentCount={commentCount}
+            shareCount={0}
+            className="px-0 py-0"
+          />
         </div>
       </div>
       <PhotoViewerModal
