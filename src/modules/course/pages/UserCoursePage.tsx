@@ -4,6 +4,7 @@ import { api } from "../../../services/api";
 import { useAuthStore } from "../../../store/useAuthStore";
 import type { Program } from "../../../types/program";
 import ProgramModal from "../components/ProgramModal";
+import PageLayout from "../../../components/layout/PageLayout";
 
 const UserCoursePage: React.FC = (): JSX.Element => {
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -143,19 +144,18 @@ const UserCoursePage: React.FC = (): JSX.Element => {
   }
 
   return (
-    <div
-      className="min-h-screen py-8 px-4"
-      style={{ backgroundColor: "#F2F4F7" }}
+    <PageLayout
+      title="Chương trình học của tôi"
+      description="Danh sách các khóa học bạn đang tham gia tại CodeGym"
+      headerGradient="from-indigo-600 via-purple-600 to-indigo-800"
+      icon={
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path d="M12 14l9-5-9-5-9 5 9 5z" />
+          <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
+        </svg>
+      }
     >
-      <div className="max-w-5xl mx-auto">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Chương trình học của tôi
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Danh sách các khóa học bạn đang tham gia
-          </p>
-        </header>
 
         {programs.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
@@ -185,26 +185,54 @@ const UserCoursePage: React.FC = (): JSX.Element => {
             </div>
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {programs.map((program) => {
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-8">
+            {programs.map((program, index) => {
+              // Generate slightly different gradients based on index for variety
+              const gradients = [
+                "from-blue-500 to-indigo-600",
+                "from-emerald-400 to-teal-600",
+                "from-orange-400 to-rose-500",
+                "from-purple-500 to-fuchsia-600",
+              ];
+              const bgGradient = gradients[index % gradients.length];
+
               return (
                 <div
                   key={program.id}
-                  className="bg-white rounded-lg shadow-sm p-5 border hover:shadow-md transition cursor-pointer"
+                  className="group relative bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden cursor-pointer flex flex-col h-full"
                   onClick={() => handleOpenModal(program)}
                 >
-                  <h2 className="text-lg font-semibold text-gray-800">
-                    {program.name}
-                  </h2>
-                  {program.description && (
-                    <p className="text-gray-500 text-sm mt-1 line-clamp-2">
-                      {program.description}
-                    </p>
-                  )}
-                  {/* Tiến độ học đã được ẩn theo yêu cầu, chỉ giữ lại thông tin học phần */}
-                  <p className="text-indigo-600 text-sm mt-3 font-medium">
-                    {program.modules?.length ?? 0} học phần
-                  </p>
+                  <div className={`h-24 w-full bg-gradient-to-r ${bgGradient} relative overflow-hidden`}>
+                     <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-white opacity-10 rounded-full mix-blend-overlay"></div>
+                  </div>
+                  
+                  <div className="px-6 pb-6 pt-4 flex-1 flex flex-col relative">
+                    <div className="absolute -top-10 right-6 w-14 h-14 bg-white rounded-2xl shadow-lg flex items-center justify-center transform rotate-3 group-hover:rotate-6 transition-transform duration-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-gray-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                    </div>
+
+                    <h2 className="text-xl font-bold text-gray-800 pr-16 line-clamp-2 leading-tight">
+                      {program.name}
+                    </h2>
+                    
+                    {program.description && (
+                      <p className="text-gray-500 text-sm mt-3 line-clamp-3 flex-1">
+                        {program.description}
+                      </p>
+                    )}
+                    
+                    <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between">
+                      <div className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-semibold tracking-wide">
+                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mr-2 animate-pulse"></span>
+                        {program.modules?.length ?? 0} HỌC PHẦN
+                      </div>
+                      <span className="text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center text-sm font-medium">
+                        Chi tiết <span className="ml-1">→</span>
+                      </span>
+                    </div>
+                  </div>
                 </div>
               );
             })}
@@ -214,8 +242,7 @@ const UserCoursePage: React.FC = (): JSX.Element => {
         {selectedProgram && (
           <ProgramModal program={selectedProgram} onClose={handleCloseModal} />
         )}
-      </div>
-    </div>
+    </PageLayout>
   );
 };
 
